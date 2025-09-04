@@ -1,0 +1,19 @@
+//[ Cliente (App/Web) ]
+          │
+
+//[ RepositorioAPI (HTTP requests, Flutter/Dart) ]
+          │
+          
+//[ Routers (FastAPI Endpoints, Backend) ]
+          │
+          
+//[ Casos de Uso ]
+          │
+          
+//[ Repositorios (Interfaces) ]
+          │
+          
+//[ Adaptadores ]
+          │
+          
+//[ Base de Datos ]
