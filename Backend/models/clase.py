@@ -1,9 +1,20 @@
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import Relationship, SQLModel, Field, Column, JSON
 from typing import Optional, List
 from datetime import datetime
 from pydantic import BaseModel
+from enum import Enum
 
-# Entidad SQLModel
+# Enum para días de la semana
+class DiaSemana(str, Enum):
+    lunes = "lunes"
+    martes = "martes"
+    miercoles = "miercoles"
+    jueves = "jueves"
+    viernes = "viernes"
+    sabado = "sabado"
+    domingo = "domingo"
+
+# Modelo de tabla Clase
 class Clase(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     nombre: str = Field(index=True)
@@ -13,13 +24,22 @@ class Clase(SQLModel, table=True):
     cupo_maximo: Optional[int] = Field(default=20, ge=1)
     instructor: Optional[str] = None
     duracion_minutos: Optional[int] = Field(default=60, ge=15)
-    dificultad: Optional[str] = Field(default="Media")  # Baja, Media, Alta
-    horario: Optional[str] = Field(default=None, description="Fecha y hora de la clase en formato 'YYYY-MM-DD HH:MM'")  # NUEVO ATRIBUTO
+    dificultad: Optional[str] = Field(default="Media")
     
+    # Nueva forma de manejar recurrencia
+    dias_semana: List[DiaSemana] = Field(
+        sa_column=Column(JSON),
+        default_factory=list, 
+        description="Días de la semana en los que se repite la clase")
+    hora: Optional[str] = Field(default=None, description="Hora de la clase en formato 'HH:MM'")
+
     # Relación con inscripciones
     inscripciones: List["Inscripcion"] = Relationship(back_populates="clase")
 
-# Modelos Pydantic para request/response
+# ---------------------------
+# MODELOS PYDANTIC
+# ---------------------------
+
 class ClaseBase(BaseModel):
     nombre: str
     descripcion: Optional[str] = None
@@ -27,18 +47,23 @@ class ClaseBase(BaseModel):
     instructor: Optional[str] = None
     duracion_minutos: Optional[int] = 60
     dificultad: Optional[str] = "Media"
-    horario: Optional[str] = None  # NUEVO ATRIBUTO
+    dias_semana: Optional[List[DiaSemana]] = None
+    hora: Optional[str] = None  # NUEVO ATRIBUTO
 
 class ClaseCreate(ClaseBase):
     pass
 
 class ClaseRead(ClaseBase):
     id: int
+    nombre: str
+    instructor: Optional[str]
+    dificultad: Optional[str]
+    hora: Optional[str]  
+    dias_semana: List[str]
     activa: bool
-    fecha_creacion: datetime
-    
+
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class ClaseUpdate(BaseModel):
     nombre: Optional[str] = None
@@ -48,7 +73,8 @@ class ClaseUpdate(BaseModel):
     instructor: Optional[str] = None
     duracion_minutos: Optional[int] = None
     dificultad: Optional[str] = None
-    horario: Optional[str] = None  # NUEVO ATRIBUTO
+    dias_semana: Optional[List[DiaSemana]] = None
+    hora: Optional[str] = None
 
 class ClaseInscripcionResponse(BaseModel):
     mensaje: str

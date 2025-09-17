@@ -206,7 +206,9 @@ class _VerClasesScreenState extends State<VerClasesScreen> {
                                         Text(
                                             'Dificultad: ${clase['dificultad'] ?? 'Sin nivel'}'),
                                         Text(
-                                            'Horario: ${clase['horario'] ?? 'Sin horario'}'),
+                                            'Horario: ${clase['hora'] ?? 'Sin horario'}'),
+                                        Text(
+                                            'Días: ${clase['dias_semana']?.join(', ') ?? 'No definido'}'),
                                       ],
                                     ),
                                   ),

@@ -47,7 +47,7 @@ class InscripcionRead(InscripcionBase):
     fecha_cancelacion: Optional[datetime] = None
     motivo_cancelacion: Optional[str] = None
     transaccion_id: Optional[int] = None
-    
+    fecha: Optional[datetime] 
     class Config:
         from_attributes = True
 

@@ -1,5 +1,6 @@
 // repositorio_api/repositorio_api.dart
 import 'package:dio/dio.dart';
+import 'package:http/http.dart' as _dio;
 import '../services/network_service.dart';
 
 class RepositorioAPI {
@@ -84,7 +85,7 @@ class RepositorioAPI {
     }
   }
 
-  Future<int> obtenerIdDesdeDni(String dni) async {
+  Future<int> c(String dni) async {
     try {
       final clientes = await obtenerClientes();
       final cliente = clientes.firstWhere((c) => c['dni'] == dni,
@@ -118,12 +119,13 @@ class RepositorioAPI {
 
   // CLASES
   Future<List<dynamic>> obtenerClases(
-      {String? instructor, String? horario}) async {
+      {String? instructor, String? horario, String? ids}) async {
     final response = await _dio.get(
       '$baseUrl/api/clases',
       queryParameters: {
         if (instructor != null) 'instructor': instructor,
         if (horario != null) 'horario': horario,
+        if (ids != null) 'ids': ids, // <-- nuevo parámetro
       },
     );
     return response.data;
@@ -268,6 +270,13 @@ class RepositorioAPI {
 
   Future<dynamic> crearPago(Map<String, dynamic> datosPago) async {
     final response = await _dio.post('$baseUrl/api/pago', data: datosPago);
+    return response.data;
+  }
+
+  // CRONOGRAMA
+  Future<List<dynamic>> obtenerCronograma(String clienteDni) async {
+    final response =
+        await _dio.get('$baseUrl/api/inscripciones/cronograma/$clienteDni');
     return response.data;
   }
 }

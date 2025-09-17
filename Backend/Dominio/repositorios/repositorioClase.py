@@ -43,3 +43,7 @@ class RepositorioClase(ABC):
     @abstractmethod
     def verificar_nombre_existente(self, nombre: str, excluir_id: Optional[int] = None) -> bool:
         pass
+    
+    @abstractmethod
+    def listar_clases_por_dia_hora(self, dia_semana: str, hora: str) -> List[Clase]:
+        pass

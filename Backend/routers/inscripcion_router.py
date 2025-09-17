@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Query
-from sqlmodel import Session, select
+from sqlmodel import SQLModel, Field, Session, select
 from typing import List, Optional
 from datetime import datetime
 
@@ -167,17 +167,12 @@ def get_inscripciones_cliente(
     repositorio: RepositorioInscripciones = Depends(get_repositorio_inscripciones),
     session: Session = Depends(get_session)
 ):
-    """Obtener todas las inscripciones de un cliente usando el caso de uso"""
-    print(f"DEBUG: Buscando inscripciones para cliente (endpoint específico): {cliente_dni}")
-
+    """Obtener cronograma de un cliente usando inscripciones"""
     cliente = session.get(Cliente, cliente_dni)
     if not cliente:
-        print(f"DEBUG: Cliente {cliente_dni} no encontrado")
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     
     inscripciones = ver_cronograma(cliente_dni, repositorio)
-    print(f"DEBUG: Encontradas {len(inscripciones)} inscripciones")
-
     return inscripciones
 
 @inscripcion_router.get("/clase/{clase_id}", response_model=List[InscripcionRead])
@@ -215,3 +210,28 @@ def delete_inscripcion(
     """Eliminar permanentemente una inscripción"""
     if not repositorio.eliminar_inscripcion(inscripcion_id):
         raise HTTPException(status_code=404, detail="Inscripción no encontrada")
+    
+@inscripcion_router.get("/cronograma/{cliente_dni}", response_model=List[dict])
+def get_cronograma_cliente(
+    cliente_dni: str,
+    repositorio: RepositorioInscripciones = Depends(get_repositorio_inscripciones)
+):
+    """Obtener cronograma de clases para un cliente usando el caso de uso ver_cronograma"""
+    try:
+        # Primero verificar que el cliente existe
+        from database import get_session
+        from sqlmodel import select
+        from models.cliente import Cliente
+        
+        session = next(get_session())
+        cliente = session.exec(select(Cliente).where(Cliente.dni == cliente_dni)).first()
+        if not cliente:
+            raise HTTPException(status_code=404, detail="Cliente no encontrado")
+        
+        cronograma = ver_cronograma(cliente_dni, repositorio)
+        return cronograma
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al generar el cronograma: {str(e)}"
+        )

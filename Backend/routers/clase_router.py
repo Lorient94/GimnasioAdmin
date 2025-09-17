@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException, status, Depends
-from sqlmodel import Session
+from fastapi import APIRouter, HTTPException, Query, status, Depends
+from sqlmodel import SQLModel, Field, Session, select, Relationship  # Relationship si lo usas
 from typing import List, Optional
 from models.clase import Clase, ClaseCreate, ClaseRead, ClaseUpdate
 from Dominio.repositorios.repositorioClase import RepositorioClase 
@@ -15,14 +15,22 @@ def get_clase_repository(session: Session = Depends(get_session)) -> Repositorio
 
 @clase_router.get("/", response_model=List[ClaseRead])
 def list_clases(
+    ids: Optional[str] = None,
     activas: bool = True, 
     instructor: Optional[str] = None, 
     horario: Optional[str] = None, 
     repository: RepositorioClase = Depends(get_clase_repository)
 ):
     clases = consultar_clases(repository, activas=activas, instructor=instructor, horario=horario)
-    return clases
+    if ids:
+        # Convertimos CSV a lista de ints
+        try:
+            id_list = [int(x) for x in ids.split(",")]
+            clases = [clase for clase in clases if clase.id in id_list]
+        except ValueError:
+            raise HTTPException(status_code=400, detail="IDs inválidos")
 
+    return clases
 
 @clase_router.get("/{clase_id}", response_model=ClaseRead)
 def get_clase(

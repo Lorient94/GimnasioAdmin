@@ -79,13 +79,12 @@ class AdaptadorInscripcionesSQL(RepositorioInscripciones):
         print(f"DEBUG ADAPTADOR: Inscripción {inscripcion_id} no encontrada para completar")
         return False
 
-    def ver_inscripciones_cliente(self, cliente_dni: str) -> List[Inscripcion]:
-        print(f"DEBUG ADAPTADOR: Buscando inscripciones para cliente DNI: {cliente_dni}")
-        statement = select(Inscripcion).where(Inscripcion.cliente_dni == cliente_dni)
-        resultados = list(self.session.exec(statement))
-        print(f"DEBUG ADAPTADOR: Encontradas {len(resultados)} inscripciones para cliente {cliente_dni}")
-        return resultados
-
+    def ver_inscripciones_cliente(self, cliente_dni: str, estado: EstadoInscripcion = EstadoInscripcion.ACTIVO):
+        statement = select(Inscripcion).where(
+        (Inscripcion.cliente_dni == cliente_dni) &
+        (Inscripcion.estado == estado)
+    )
+        return list(self.session.exec(statement))
     def ver_inscripciones_clase(self, clase_id: int) -> List[Inscripcion]:
         print(f"DEBUG ADAPTADOR: Buscando inscripciones para clase ID: {clase_id}")
         statement = select(Inscripcion).where(Inscripcion.clase_id == clase_id)
