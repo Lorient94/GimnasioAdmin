@@ -1,4 +1,4 @@
-// main.dart
+// main.dart - Versión optimizada
 import 'package:flutter/material.dart';
 import 'Screens/inicioSesion.dart';
 import 'Screens/registroUsuario.dart';
@@ -20,7 +20,6 @@ void main() async {
   RepositorioAPI api;
 
   try {
-    // Intenta encontrar la IP automáticamente
     print('🔍 Buscando servidor automáticamente...');
     api = await RepositorioAPI.createWithAutoIP();
 
@@ -33,11 +32,9 @@ void main() async {
     }
   } catch (e) {
     print('❌ Error auto-detectando IP: $e');
-    // Fallback a IP por defecto
     api = RepositorioAPI(baseUrl: 'http://192.168.1.16:8000');
   }
 
-  // Test final de conexión
   final isConnected = await api.testConnection();
   print('Connection status: $isConnected');
 
@@ -52,7 +49,79 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Gimnasio App',
+      title: 'Gimnasio ABC',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        primaryColor: Color(0xFF1A73E8),
+        colorScheme: ColorScheme.fromSwatch(
+          primarySwatch: Colors.blue,
+          accentColor: Color(0xFF34A853),
+        ),
+        scaffoldBackgroundColor: Colors.grey[50],
+        appBarTheme: AppBarTheme(
+          backgroundColor: Color(0xFF1A73E8),
+          elevation: 2,
+          iconTheme: IconThemeData(color: Colors.white),
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Color(0xFF1A73E8),
+            foregroundColor: Colors.white,
+            padding: EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 2,
+            textStyle: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: Color(0xFF1A73E8),
+            textStyle: TextStyle(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        cardTheme: CardTheme(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        ),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      darkTheme: ThemeData.dark().copyWith(
+        primaryColor: Color(0xFF1A73E8),
+        colorScheme: ColorScheme.dark(
+          primary: Color(0xFF1A73E8),
+          secondary: Color(0xFF34A853),
+        ),
+        cardTheme: CardTheme(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        ),
+      ),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -62,22 +131,8 @@ class MyApp extends StatelessWidget {
         Locale('es', 'ES'),
         Locale('en', 'US'),
       ],
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: FutureBuilder(
-        future: AuthService.isLoggedIn(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Scaffold(body: Center(child: CircularProgressIndicator()));
-          }
-          if (snapshot.data == true) {
-            return HomeScreen(api: api);
-          }
-          return InicioSesionScreen(api: api);
-        },
-      ),
+      // CAMBIO PRINCIPAL: Siempre inicia con HomeScreen
+      home: HomeScreen(api: api),
       routes: {
         '/registro': (context) => RegistroUsuarioScreen(api: api),
         '/login': (context) => InicioSesionScreen(api: api),
@@ -114,80 +169,83 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.green[50]!,
-              Colors.green[100]!,
+              Color(0xFF1A73E8).withOpacity(0.9),
+              Color(0xFF34A853).withOpacity(0.7),
             ],
           ),
         ),
-        child: Center(
+        child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.green[500],
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.fitness_center,
-                      size: 60,
-                      color: Colors.white,
-                    ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 40),
-                  Text(
-                    'Bienvenido al Gimnasio ABC',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green[800],
-                    ),
+                  child: Icon(
+                    Icons.fitness_center,
+                    size: 60,
+                    color: Color(0xFF1A73E8),
                   ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Selecciona una opción para continuar',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.green[600],
-                    ),
-                    textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 24),
+                Text(
+                  'Bienvenido a Gimnasio ABC',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
-                  SizedBox(height: 40),
-                  ...options.map((option) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: _buildButton(
-                          context,
-                          option.text,
-                          option.icon,
-                          Colors.green[600]!,
-                          Colors.white,
-                          () {
-                            Navigator.pushNamed(context, option.route);
-                          },
-                        ),
-                      )),
-                  SizedBox(height: 30),
-                  Text(
-                    '2025 Gimnasio ABC',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.green[400],
-                    ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Tu compañero fitness para alcanzar tus metas',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white.withOpacity(0.9),
                   ),
-                ],
-              ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 40),
+                Expanded(
+                  child: GridView.count(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 1.2,
+                    children: options.map((option) {
+                      return _buildMenuCard(context, option);
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text(
+                  '© 2025 Gimnasio ABC',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.7),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -195,42 +253,39 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildButton(
-    BuildContext context,
-    String text,
-    IconData icon,
-    Color backgroundColor,
-    Color textColor,
-    VoidCallback onPressed,
-  ) {
-    return SizedBox(
-      width: double.infinity,
-      height: 60,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor,
-          foregroundColor: textColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          elevation: 5,
-          shadowColor: Colors.green.withOpacity(0.3),
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 24),
-            SizedBox(width: 10),
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+  Widget _buildMenuCard(BuildContext context, _MenuOption option) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          Navigator.pushNamed(context, option.route);
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                option.icon,
+                size: 32,
+                color: Color(0xFF1A73E8),
               ),
-            ),
-          ],
+              SizedBox(height: 12),
+              Text(
+                option.text,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

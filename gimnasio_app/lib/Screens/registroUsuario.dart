@@ -124,7 +124,7 @@ class _RegistroUsuarioScreenState extends State<RegistroUsuarioScreen> {
           Icon(Icons.fitness_center,
               size: isSmallScreen ? 50 : 60, color: Colors.white),
           SizedBox(height: isSmallScreen ? 10 : 12),
-          Text('GYM PRO',
+          Text('GYM ABC',
               style: TextStyle(
                   color: Colors.white,
                   fontSize: isSmallScreen ? 24 : 28,

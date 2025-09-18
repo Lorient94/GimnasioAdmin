@@ -19,7 +19,6 @@ class _VerContenidoScreenState extends State<VerContenidoScreen> {
   final TextEditingController _busquedaController = TextEditingController();
   final TextEditingController _fechaController = TextEditingController();
 
-  // Lista de categorías predefinidas
   final List<String> _categorias = [
     'Todas',
     'video',
@@ -119,6 +118,10 @@ class _VerContenidoScreenState extends State<VerContenidoScreen> {
         SnackBar(
           content: Text('✅ Descargado en ${file.path}'),
           backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     } catch (e) {
@@ -126,6 +129,10 @@ class _VerContenidoScreenState extends State<VerContenidoScreen> {
         SnackBar(
           content: Text('❌ Error al descargar: $e'),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     } finally {
@@ -139,6 +146,19 @@ class _VerContenidoScreenState extends State<VerContenidoScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).primaryColor,
+              onPrimary: Colors.white,
+              onSurface: Colors.grey[800]!,
+            ),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
     ).then((fechaSeleccionada) {
       if (fechaSeleccionada != null) {
         _fechaController.text =
@@ -148,13 +168,18 @@ class _VerContenidoScreenState extends State<VerContenidoScreen> {
     });
   }
 
-  // Diálogo para mostrar detalles del contenido
   void _mostrarDetallesContenido(dynamic contenido) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(contenido['titulo'] ?? 'Sin título'),
+          title: Text(
+            contenido['titulo'] ?? 'Sin título',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).primaryColor,
+            ),
+          ),
           content: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,12 +193,16 @@ class _VerContenidoScreenState extends State<VerContenidoScreen> {
                 SizedBox(height: 16),
                 Text(
                   'Descripción:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.grey[800],
+                  ),
                 ),
                 SizedBox(height: 8),
                 Text(
                   contenido['descripcion'] ?? 'Sin descripción',
-                  style: TextStyle(fontSize: 14),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                 ),
                 SizedBox(height: 16),
                 if (contenido['url'] != null)
@@ -181,18 +210,30 @@ class _VerContenidoScreenState extends State<VerContenidoScreen> {
               ],
             ),
           ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           actions: [
             if (contenido['url'] != null)
-              TextButton(
+              ElevatedButton(
                 onPressed: () => _descargarContenido(
                   contenido['id'],
                   contenido['titulo'] ?? 'contenido',
                 ),
-                child: Text('DESCARGAR'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text('Descargar'),
               ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('CERRAR'),
+              child: Text(
+                'Cerrar',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
             ),
           ],
         );
@@ -202,17 +243,21 @@ class _VerContenidoScreenState extends State<VerContenidoScreen> {
 
   Widget _buildInfoRow(String label, String? value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '$label: ',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
           ),
           Expanded(
             child: Text(
               value ?? 'No disponible',
+              style: TextStyle(color: Colors.grey[700]),
               softWrap: true,
             ),
           ),
@@ -234,28 +279,28 @@ class _VerContenidoScreenState extends State<VerContenidoScreen> {
   IconData _obtenerIconoCategoria(String categoria) {
     switch (categoria) {
       case 'video':
-        return Icons.videocam;
+        return Icons.videocam_outlined;
       case 'foto':
-        return Icons.photo;
+        return Icons.photo_outlined;
       case 'texto':
-        return Icons.article;
+        return Icons.article_outlined;
       case 'enlace':
-        return Icons.link;
+        return Icons.link_outlined;
       default:
-        return Icons.category;
+        return Icons.category_outlined;
     }
   }
 
   Color _obtenerColorCategoria(String categoria) {
     switch (categoria) {
       case 'video':
-        return Colors.redAccent;
+        return Colors.red;
       case 'foto':
-        return Colors.blueAccent;
+        return Colors.blue;
       case 'texto':
-        return Colors.greenAccent;
+        return Colors.green;
       case 'enlace':
-        return Colors.purpleAccent;
+        return Colors.purple;
       default:
         return Colors.grey;
     }
@@ -265,251 +310,414 @@ class _VerContenidoScreenState extends State<VerContenidoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('📚 Contenidos Disponibles'),
-        backgroundColor: Colors.deepPurple[700],
+        title: Text(
+          'Contenidos Disponibles',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Theme.of(context).primaryColor,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: Colors.white),
             onPressed: _cargarContenidos,
             tooltip: 'Recargar contenidos',
           ),
         ],
       ),
-      body: _cargando
-          ? Center(child: CircularProgressIndicator())
-          : _error.isNotEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).primaryColor.withOpacity(0.1),
+              Theme.of(context).colorScheme.secondary.withOpacity(0.05),
+            ],
+          ),
+        ),
+        child: _cargando
+            ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).primaryColor,
+                  ),
+                ),
+              )
+            : _error.isNotEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline, size: 50, color: Colors.red),
+                        SizedBox(height: 16),
+                        Text(
+                          _error,
+                          style: TextStyle(color: Colors.red, fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: _cargarContenidos,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                          ),
+                          child: Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  )
+                : Column(
                     children: [
-                      Icon(Icons.error, color: Colors.red, size: 50),
-                      SizedBox(height: 16),
-                      Text(
-                        _error,
-                        style: TextStyle(color: Colors.red, fontSize: 16),
-                        textAlign: TextAlign.center,
+                      // Filtros de búsqueda
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(20),
+                            bottomRight: Radius.circular(20),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            // Selector de categoría
+                            DropdownButtonFormField<String>(
+                              value: _categoriaSeleccionada,
+                              items: _categorias.map((String categoria) {
+                                return DropdownMenuItem<String>(
+                                  value: categoria,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        _obtenerIconoCategoria(categoria),
+                                        color:
+                                            _obtenerColorCategoria(categoria),
+                                        size: 20,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        categoria,
+                                        style: TextStyle(
+                                          color: Colors.grey[800],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (String? nuevaCategoria) {
+                                setState(() {
+                                  _categoriaSeleccionada = nuevaCategoria!;
+                                });
+                                _filtrarPorCategoria(nuevaCategoria!);
+                              },
+                              decoration: InputDecoration(
+                                labelText: 'Filtrar por categoría',
+                                labelStyle: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey[50],
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 14),
+                              ),
+                              dropdownColor: Colors.white,
+                            ),
+                            SizedBox(height: 12),
+
+                            // Búsqueda por nombre
+                            TextField(
+                              controller: _busquedaController,
+                              decoration: InputDecoration(
+                                labelText: 'Buscar por nombre',
+                                labelStyle: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                prefixIcon:
+                                    Icon(Icons.search, color: Colors.grey[600]),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey[50],
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 14),
+                              ),
+                              onSubmitted: (value) {
+                                if (value.isNotEmpty) {
+                                  _buscarPorNombre(value);
+                                }
+                              },
+                            ),
+                            SizedBox(height: 12),
+
+                            // Búsqueda por fecha
+                            ElevatedButton(
+                              onPressed: _mostrarDialogoFecha,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(context).primaryColor,
+                                foregroundColor: Colors.white,
+                                minimumSize: Size(double.infinity, 50),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.calendar_today, size: 20),
+                                  SizedBox(width: 8),
+                                  Text('Buscar por Fecha'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: _cargarContenidos,
-                        child: Text('Reintentar'),
+
+                      // Contador de resultados
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          children: [
+                            Icon(Icons.collections_bookmark,
+                                size: 20,
+                                color: Theme.of(context).primaryColor),
+                            SizedBox(width: 8),
+                            Text(
+                              '${_contenidos.length} contenido(s) encontrado(s)',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[700],
+                                fontSize: 16,
+                              ),
+                            ),
+                            Spacer(),
+                            if (_categoriaSeleccionada != 'Todas')
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: _obtenerColorCategoria(
+                                          _categoriaSeleccionada)
+                                      .withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: _obtenerColorCategoria(
+                                            _categoriaSeleccionada)
+                                        .withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Text(
+                                  _categoriaSeleccionada,
+                                  style: TextStyle(
+                                    color: _obtenerColorCategoria(
+                                        _categoriaSeleccionada),
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+
+                      // Lista de contenidos
+                      Expanded(
+                        child: _contenidos.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.search_off,
+                                        size: 60, color: Colors.grey[400]),
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'No se encontraron contenidos',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      'Intenta con otros filtros de búsqueda',
+                                      style: TextStyle(
+                                        color: Colors.grey[500],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : ListView.builder(
+                                padding: EdgeInsets.only(bottom: 16),
+                                itemCount: _contenidos.length,
+                                itemBuilder: (context, index) {
+                                  final contenido = _contenidos[index];
+                                  final categoria =
+                                      contenido['categoria'] ?? 'desconocido';
+                                  final colorCategoria =
+                                      _obtenerColorCategoria(categoria);
+
+                                  return Container(
+                                    margin: EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 8),
+                                    child: Card(
+                                      elevation: 4,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(16),
+                                        onTap: () => _mostrarDetallesContenido(
+                                            contenido),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Container(
+                                                    width: 50,
+                                                    height: 50,
+                                                    decoration: BoxDecoration(
+                                                      color: colorCategoria
+                                                          .withOpacity(0.1),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: Icon(
+                                                      _obtenerIconoCategoria(
+                                                          categoria),
+                                                      color: colorCategoria,
+                                                      size: 24,
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: 16),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          contenido['titulo'] ??
+                                                              'Sin título',
+                                                          style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 16,
+                                                            color: Colors
+                                                                .grey[800],
+                                                          ),
+                                                        ),
+                                                        SizedBox(height: 8),
+                                                        Text(
+                                                          contenido[
+                                                                  'descripcion'] ??
+                                                              'Sin descripción',
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                            color: Colors
+                                                                .grey[700],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              SizedBox(height: 12),
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                            horizontal: 12,
+                                                            vertical: 6),
+                                                    decoration: BoxDecoration(
+                                                      color: colorCategoria
+                                                          .withOpacity(0.1),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                    ),
+                                                    child: Text(
+                                                      categoria.toUpperCase(),
+                                                      style: TextStyle(
+                                                        color: colorCategoria,
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: 12),
+                                                  Icon(Icons.calendar_today,
+                                                      size: 14,
+                                                      color: Colors.grey[600]),
+                                                  SizedBox(width: 4),
+                                                  Text(
+                                                    _formatearFecha(contenido[
+                                                        'fecha_creacion']),
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.grey[600],
+                                                    ),
+                                                  ),
+                                                  Spacer(),
+                                                  if (contenido['url'] != null)
+                                                    IconButton(
+                                                      icon: Icon(Icons.download,
+                                                          color: Theme.of(
+                                                                  context)
+                                                              .primaryColor),
+                                                      onPressed: () =>
+                                                          _descargarContenido(
+                                                        contenido['id'],
+                                                        contenido['titulo'] ??
+                                                            'contenido',
+                                                      ),
+                                                      tooltip:
+                                                          'Descargar contenido',
+                                                    ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                       ),
                     ],
                   ),
-                )
-              : Column(
-                  children: [
-                    // Filtros de búsqueda
-                    Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        children: [
-                          // Selector de categoría
-                          Card(
-                            elevation: 3,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12.0, vertical: 8.0),
-                              child: DropdownButton<String>(
-                                value: _categoriaSeleccionada,
-                                isExpanded: true,
-                                underline: SizedBox(),
-                                items: _categorias.map((String categoria) {
-                                  return DropdownMenuItem<String>(
-                                    value: categoria,
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          _obtenerIconoCategoria(categoria),
-                                          color:
-                                              _obtenerColorCategoria(categoria),
-                                          size: 20,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(categoria),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (String? nuevaCategoria) {
-                                  setState(() {
-                                    _categoriaSeleccionada = nuevaCategoria!;
-                                  });
-                                  _filtrarPorCategoria(nuevaCategoria!);
-                                },
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 12),
-
-                          // Búsqueda por nombre
-                          TextField(
-                            controller: _busquedaController,
-                            decoration: InputDecoration(
-                              labelText: '🔍 Buscar por nombre',
-                              border: OutlineInputBorder(),
-                              suffixIcon: IconButton(
-                                icon: Icon(Icons.search),
-                                onPressed: () {
-                                  if (_busquedaController.text.isNotEmpty) {
-                                    _buscarPorNombre(_busquedaController.text);
-                                  }
-                                },
-                              ),
-                            ),
-                            onSubmitted: (value) {
-                              if (value.isNotEmpty) {
-                                _buscarPorNombre(value);
-                              }
-                            },
-                          ),
-                          SizedBox(height: 12),
-
-                          // Búsqueda por fecha
-                          ElevatedButton.icon(
-                            onPressed: _mostrarDialogoFecha,
-                            icon: Icon(Icons.calendar_today),
-                            label: Text('📅 Buscar por Fecha'),
-                            style: ElevatedButton.styleFrom(
-                              minimumSize: Size(double.infinity, 50),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Contador de resultados
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '📊 ${_contenidos.length} contenido(s) encontrado(s)',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          if (_categoriaSeleccionada != 'Todas')
-                            Chip(
-                              label: Text(_categoriaSeleccionada),
-                              backgroundColor:
-                                  _obtenerColorCategoria(_categoriaSeleccionada)
-                                      .withOpacity(0.2),
-                            ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 8),
-
-                    // Lista de contenidos
-                    Expanded(
-                      child: _contenidos.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.search_off,
-                                      size: 60, color: Colors.grey),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    'No se encontraron contenidos',
-                                    style: TextStyle(
-                                        fontSize: 18, color: Colors.grey),
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'Intenta con otros filtros de búsqueda',
-                                    style: TextStyle(color: Colors.grey),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : ListView.builder(
-                              itemCount: _contenidos.length,
-                              itemBuilder: (context, index) {
-                                final contenido = _contenidos[index];
-                                final categoria =
-                                    contenido['categoria'] ?? 'desconocido';
-
-                                return Card(
-                                  margin: EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 6),
-                                  elevation: 2,
-                                  child: ListTile(
-                                    leading: Icon(
-                                      _obtenerIconoCategoria(categoria),
-                                      color: _obtenerColorCategoria(categoria),
-                                      size: 28,
-                                    ),
-                                    title: Text(
-                                      contenido['titulo'] ?? 'Sin título',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    subtitle: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        SizedBox(height: 4),
-                                        Text(
-                                          contenido['descripcion'] ??
-                                              'Sin descripción',
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(fontSize: 14),
-                                        ),
-                                        SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            Chip(
-                                              label: Text(
-                                                categoria.toUpperCase(),
-                                                style: TextStyle(
-                                                    fontSize: 10,
-                                                    color: Colors.white),
-                                              ),
-                                              backgroundColor:
-                                                  _obtenerColorCategoria(
-                                                      categoria),
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              _formatearFecha(
-                                                  contenido['fecha_creacion']),
-                                              style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    trailing: contenido['url'] != null
-                                        ? IconButton(
-                                            icon: Icon(Icons.download,
-                                                color: Colors.blue),
-                                            onPressed: () =>
-                                                _descargarContenido(
-                                              contenido['id'],
-                                              contenido['titulo'] ??
-                                                  'contenido',
-                                            ),
-                                            tooltip: 'Descargar contenido',
-                                          )
-                                        : null,
-                                    onTap: () =>
-                                        _mostrarDetallesContenido(contenido),
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                  ],
-                ),
+      ),
     );
   }
 }
