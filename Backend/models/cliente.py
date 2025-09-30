@@ -1,5 +1,5 @@
 from sqlmodel import Relationship, SQLModel, Field, Session, select
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, TYPE_CHECKING
 from datetime import date
 from pydantic import BaseModel
 
@@ -57,3 +57,19 @@ class LoginRequest(BaseModel):
 
 class VerificacionResponse(BaseModel):
     existe: bool
+
+
+class ClienteStatsResponse(BaseModel):
+    total_clientes: int
+    clientes_activos: int
+    clientes_inactivos: int
+    porcentaje_activos: float
+    nuevos_ultima_semana: Optional[int] = 0
+    membresias_expiracion_proxima: Optional[int] = 0
+
+
+if TYPE_CHECKING:
+    # Importaciones solo para el chequeo de tipos y linters (evitan importaciones circulares en runtime)
+    from models.transaccion import Transaccion  # noqa: F401
+    from models.inscripcion import Inscripcion  # noqa: F401
+    from models.pago import Pago  # noqa: F401

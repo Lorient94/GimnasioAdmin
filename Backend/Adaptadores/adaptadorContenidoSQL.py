@@ -135,3 +135,85 @@ class AdaptadorContenidoSQL(RepositorioContenido):
             except Exception as e:
                 print(f"Error al descargar contenido: {e}")
         return None
+
+    # Métodos adicionales esperados por los routers / casos de uso
+    def listar_todos_los_contenidos(self, categoria: Optional[str] = None) -> List[Contenido]:
+        """Listado completo (incluye inactivos) usado por APIs administrativas"""
+        query = select(Contenido)
+        if categoria:
+            query = query.where(Contenido.categoria == categoria)
+        query = query.order_by(Contenido.fecha_creacion.desc())
+        return self.session.exec(query).all()
+
+    def eliminar_contenido_permanentemente(self, contenido_id: int) -> bool:
+        contenido = self.obtener_contenido_por_id(contenido_id)
+        if contenido:
+            try:
+                # Intentar eliminar el registro de la BD
+                self.session.delete(contenido)
+                self.session.commit()
+                return True
+            except Exception as e:
+                print(f"Error eliminando contenido permanentemente: {e}")
+                return False
+        return False
+
+    def cambiar_visibilidad(self, contenido_id: int, es_publico: bool) -> Optional[Contenido]:
+        contenido = self.obtener_contenido_por_id(contenido_id)
+        if contenido:
+            contenido.es_publico = es_publico
+            contenido.fecha_actualizacion = datetime.utcnow()
+            self.session.add(contenido)
+            self.session.commit()
+            self.session.refresh(contenido)
+            return contenido
+        return None
+
+    def obtener_estadisticas_contenido(self, contenido_id: int) -> dict:
+        """Retorna estadísticas simples para un contenido. Extender según métricas disponibles."""
+        # Placeholder: si en el futuro se registran vistas/descargas, agregarlas aquí.
+        return {
+            "visitas": 0,
+            "descargas": 0
+        }
+
+    def crear_categoria(self, categoria: str) -> str:
+        """Operación mínima para crear/asegurar existencia de una categoría.
+        En este diseño las categorías son strings en los contenidos, así que no hay tabla dedicada.
+        Se devuelve la categoría solicitada como confirmación.
+        """
+        return categoria
+
+    def busqueda_avanzada(self, titulo: Optional[str] = None, categoria: Optional[str] = None,
+                          tipo_contenido: Optional[str] = None, fecha_inicio: Optional[str] = None,
+                          fecha_fin: Optional[str] = None, solo_publicos: bool = False) -> List[Contenido]:
+        query = select(Contenido)
+
+        if titulo:
+            query = query.where(Contenido.titulo.contains(titulo))
+
+        if categoria:
+            query = query.where(Contenido.categoria == categoria)
+
+        if tipo_contenido:
+            query = query.where(Contenido.tipo_contenido == tipo_contenido)
+
+        if fecha_inicio:
+            try:
+                inicio = datetime.strptime(fecha_inicio, "%Y-%m-%d")
+                query = query.where(Contenido.fecha_creacion >= inicio)
+            except ValueError:
+                pass
+
+        if fecha_fin:
+            try:
+                fin = datetime.strptime(fecha_fin, "%Y-%m-%d")
+                query = query.where(Contenido.fecha_creacion <= fin)
+            except ValueError:
+                pass
+
+        if solo_publicos:
+            query = query.where(Contenido.es_publico == True)
+
+        query = query.order_by(Contenido.fecha_creacion.desc())
+        return self.session.exec(query).all()

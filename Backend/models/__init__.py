@@ -1,7 +1,9 @@
-from .cliente import Cliente
-from .clase import Clase
-from .pago import Pago
-from .inscripcion import Inscripcion
-from .transaccion import Transaccion
-from .contenido import Contenido
-from .informacion import Informacion
+# models/__init__.py
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .pago import Pago
+    from .transaccion import Transaccion
+    from .cliente import Cliente
+    from .clase import Clase
+    from .inscripcion import Inscripcion
