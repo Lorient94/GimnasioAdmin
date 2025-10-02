@@ -23,10 +23,25 @@ admin_inscripcion_router = APIRouter(prefix="/api/admin/inscripciones", tags=["a
 
 def get_repositorio_inscripciones(session: Session = Depends(get_session)) -> RepositorioInscripciones:
     return AdaptadorInscripcionesSQL(session)
+def _parse_estado_inscripcion(valor: str) -> EstadoInscripcion:
+    """Mapea variantes comunes de estado (activa/activo, cancelada/cancelado, completada/completado)
+    a los valores del Enum EstadoInscripcion. Lanzará ValueError si no reconoce el valor.
+    """
+    v = valor.strip().lower()
+    if v in ("activo", "activa"):
+        return EstadoInscripcion.ACTIVO
+    if v in ("cancelado", "cancelada"):
+        return EstadoInscripcion.CANCELADO
+    if v in ("pendiente",):
+        return EstadoInscripcion.PENDIENTE
+    if v in ("completado", "completada"):
+        return EstadoInscripcion.COMPLETADO
+    raise ValueError(f"Estado de inscripción desconocido: {valor}")
+
 
 @admin_inscripcion_router.get("/", response_model=List[InscripcionRead])
 def listar_todas_las_inscripciones(
-    estado: Optional[EstadoInscripcion] = Query(None),
+    estado: Optional[str] = Query(None),
     cliente_dni: Optional[str] = Query(None),
     clase_id: Optional[int] = Query(None),
     solo_activas: bool = Query(False, description="Filtrar solo inscripciones activas"),
@@ -40,7 +55,11 @@ def listar_todas_las_inscripciones(
     
     # Aplicar filtros
     if estado:
-        inscripciones = [ins for ins in inscripciones if ins.estado == estado]
+        try:
+            estado_enum = _parse_estado_inscripcion(estado)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        inscripciones = [ins for ins in inscripciones if ins.estado == estado_enum]
     
     if cliente_dni:
         inscripciones = [ins for ins in inscripciones if ins.cliente_dni == cliente_dni]

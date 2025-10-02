@@ -36,6 +36,28 @@ class Clase(SQLModel, table=True):
     # Relación con inscripciones
     inscripciones: List["Inscripcion"] = Relationship(back_populates="clase")
 
+    # Compatibilidad: alias/properties para mantener compatibilidad con
+    # código existente que espera otros nombres de atributos.
+    @property
+    def nivel_dificultad(self) -> Optional[str]:
+        """Alias: nivel_dificultad -> dificultad"""
+        return self.dificultad
+
+    @property
+    def duracion(self) -> Optional[int]:
+        """Alias: duracion -> duracion_minutos"""
+        return self.duracion_minutos
+
+    # Campos opcionales que pueden estar presentes en datos legacy; si no
+    # existen en la tabla, devolvemos None para mantener compatibilidad.
+    @property
+    def requisitos(self) -> Optional[str]:
+        return getattr(self, '_requisitos', None)
+
+    @property
+    def materiales_necesarios(self) -> Optional[str]:
+        return getattr(self, '_materiales_necesarios', None)
+
 # ---------------------------
 # MODELOS PYDANTIC
 # ---------------------------

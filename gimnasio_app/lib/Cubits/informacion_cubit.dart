@@ -25,7 +25,9 @@ class InformacionCubit extends Cubit<InformacionState> {
         incluirExpiradas: incluirExpiradas,
       );
 
-      final contenidos = List<Map<String, dynamic>>.from(lista);
+      // CORRECCIÓN: Convertir explícitamente a List<Map<String, dynamic>>
+      final contenidos =
+          lista.map((item) => item as Map<String, dynamic>).toList();
       emit(InformacionLoaded(informaciones: contenidos, filtradas: contenidos));
     } catch (e) {
       emit(InformacionError(message: e.toString()));
@@ -42,8 +44,10 @@ class InformacionCubit extends Cubit<InformacionState> {
 
     final filtradas = current.informaciones.where((i) {
       final titulo = i['titulo']?.toString().toLowerCase() ?? '';
+      final contenido = i['contenido']?.toString().toLowerCase() ?? '';
       final cuerpo = i['cuerpo']?.toString().toLowerCase() ?? '';
       return titulo.contains(query.toLowerCase()) ||
+          contenido.contains(query.toLowerCase()) ||
           cuerpo.contains(query.toLowerCase());
     }).toList();
 
@@ -58,7 +62,7 @@ class InformacionCubit extends Cubit<InformacionState> {
         final current = state as InformacionLoaded;
         final nuevos = [
           ...current.informaciones,
-          Map<String, dynamic>.from(nuevo)
+          nuevo as Map<String, dynamic> // CORRECCIÓN: Cast explícito
         ];
         emit(current.copyWith(informaciones: nuevos, filtradas: nuevos));
       } else {
@@ -122,5 +126,45 @@ class InformacionCubit extends Cubit<InformacionState> {
       fechaInicio: fechaInicio,
       fechaFin: fechaFin,
     );
+  }
+
+  void filtrarPorTipo(String tipo, String query) {
+    if (state is InformacionLoaded) {
+      final currentState = state as InformacionLoaded;
+
+      List<Map<String, dynamic>> filtradas =
+          currentState.informaciones.where((informacion) {
+        final tipoInformacion =
+            informacion['tipo']?.toString().toLowerCase() ?? '';
+        final coincideTipo =
+            tipo == 'todos' || tipoInformacion == tipo.toLowerCase();
+
+        // Si no coincide el tipo, excluir
+        if (!coincideTipo) return false;
+
+        // Si hay query, aplicar búsqueda también
+        if (query.isNotEmpty) {
+          final titulo = informacion['titulo']?.toString().toLowerCase() ?? '';
+          final contenido =
+              informacion['contenido']?.toString().toLowerCase() ?? '';
+          final cuerpo = informacion['cuerpo']?.toString().toLowerCase() ?? '';
+          return titulo.contains(query.toLowerCase()) ||
+              contenido.contains(query.toLowerCase()) ||
+              cuerpo.contains(query.toLowerCase());
+        }
+
+        return true;
+      }).toList();
+
+      emit(currentState.copyWith(filtradas: filtradas));
+    }
+  }
+
+  // Método adicional para limpiar filtros
+  void limpiarFiltros() {
+    if (state is InformacionLoaded) {
+      final currentState = state as InformacionLoaded;
+      emit(currentState.copyWith(filtradas: currentState.informaciones));
+    }
   }
 }

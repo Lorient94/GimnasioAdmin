@@ -22,41 +22,43 @@ class ClaseStatsWidget extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Estadísticas Generales',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Estadísticas Generales',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
 
-          // Tarjetas de resumen
-          Row(
-            children: [
-              _buildStatCard('Total Clases', clases.length.toString(),
-                  Icons.fitness_center),
-              const SizedBox(width: 16),
-              _buildStatCard(
-                  'Activas', clasesActivas.toString(), Icons.check_circle,
-                  color: Colors.green),
-              const SizedBox(width: 16),
-              _buildStatCard(
-                  'Inactivas', clasesInactivas.toString(), Icons.cancel,
-                  color: Colors.red),
-            ],
-          ),
+            // Tarjetas de resumen
+            Row(
+              children: [
+                _buildStatCard('Total Clases', clases.length.toString(),
+                    Icons.fitness_center),
+                const SizedBox(width: 16),
+                _buildStatCard(
+                    'Activas', clasesActivas.toString(), Icons.check_circle,
+                    color: Colors.green),
+                const SizedBox(width: 16),
+                _buildStatCard(
+                    'Inactivas', clasesInactivas.toString(), Icons.cancel,
+                    color: Colors.red),
+              ],
+            ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // Estadísticas por dificultad
-          _buildDificultadStats(dificultades),
+            // Estadísticas por dificultad
+            _buildDificultadStats(dificultades),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // Estadísticas por instructor
-          _buildInstructorStats(instructores),
-        ],
+            // Estadísticas por instructor
+            _buildInstructorStats(instructores),
+          ],
+        ),
       ),
     );
   }
@@ -117,7 +119,7 @@ class ClaseStatsWidget extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(entry.key),
+                      Flexible(child: Text(entry.key)),
                       Text(entry.value.toString()),
                     ],
                   ),

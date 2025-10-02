@@ -10,7 +10,7 @@ class EstadoInscripcion(str, Enum):
     PENDIENTE = "pendiente"
     COMPLETADO = "completado"
 
-# Entidad SQLModel
+# Entidad SQLModel (mantener igual)
 class Inscripcion(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     cliente_dni: str = Field(foreign_key="cliente.dni", index=True)
@@ -41,13 +41,21 @@ class InscripcionCreate(InscripcionBase):
     estado: EstadoInscripcion = Field(default=EstadoInscripcion.ACTIVO)
     pagado: bool = Field(default=False)
     
+# MODELO ACTUALIZADO - Agregar campos relacionados
 class InscripcionRead(InscripcionBase):
     id: int
     fecha_inscripcion: datetime
     fecha_cancelacion: Optional[datetime] = None
     motivo_cancelacion: Optional[str] = None
     transaccion_id: Optional[int] = None
-    fecha: Optional[datetime] 
+    
+    # CAMPOS NUEVOS para datos relacionados
+    nombre_cliente: Optional[str] = None
+    email_cliente: Optional[str] = None
+    clase_nombre: Optional[str] = None
+    clase_instructor: Optional[str] = None
+    clase_precio: Optional[float] = None
+    
     class Config:
         from_attributes = True
 

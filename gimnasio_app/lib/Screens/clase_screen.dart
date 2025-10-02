@@ -538,7 +538,7 @@ class _ClaseScreenState extends State<ClaseScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Estadísticas de ${clase['nombre']}'),
+        title: Text('Estadísticas de ${clase['nombre'] ?? ''}'),
         content: SizedBox(
           width: 400,
           child: _buildEstadisticasClaseContent(estadisticas),
@@ -554,18 +554,28 @@ class _ClaseScreenState extends State<ClaseScreen>
   }
 
   Widget _buildEstadisticasClaseContent(Map<String, dynamic> estadisticas) {
+    String porcentaje = '0.0';
+    try {
+      final p = estadisticas['ocupacion_porcentaje'];
+      porcentaje = p != null ? (p as num).toStringAsFixed(1) : '0.0';
+    } catch (_) {}
+
+    String ingresos = '0.00';
+    try {
+      final ing = estadisticas['ingresos_totales'];
+      ingresos = ing != null ? (ing as num).toStringAsFixed(2) : '0.00';
+    } catch (_) {}
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildStatItem('Total Inscripciones',
-            estadisticas['total_inscripciones']?.toString() ?? '0'),
-        _buildStatItem('Capacidad Ocupada',
-            '${estadisticas['ocupacion_porcentaje']?.toStringAsFixed(1) ?? '0'}%'),
+            (estadisticas['total_inscripciones']?.toString() ?? '0')),
+        _buildStatItem('Capacidad Ocupada', '$porcentaje%'),
         _buildStatItem('Inscripciones Activas',
-            estadisticas['inscripciones_activas']?.toString() ?? '0'),
-        _buildStatItem('Ingresos Totales',
-            '\$${estadisticas['ingresos_totales']?.toStringAsFixed(2) ?? '0.00'}'),
+            (estadisticas['inscripciones_activas']?.toString() ?? '0')),
+        _buildStatItem('Ingresos Totales', '\\$${ingresos}'),
       ],
     );
   }
@@ -592,20 +602,24 @@ class _ClaseScreenState extends State<ClaseScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildDetalleItem('ID', clase['id'].toString()),
-              _buildDetalleItem('Nombre', clase['nombre']),
-              _buildDetalleItem('Instructor', clase['instructor']),
-              _buildDetalleItem('Dificultad', clase['dificultad']),
-              _buildDetalleItem('Horario', clase['horario']),
-              _buildDetalleItem('Capacidad', '${clase['capacidad']} personas'),
+              _buildDetalleItem('ID', clase['id']?.toString() ?? ''),
+              _buildDetalleItem('Nombre', clase['nombre']?.toString() ?? ''),
+              _buildDetalleItem('Instructor',
+                  clase['instructor']?.toString() ?? 'Sin instructor'),
+              _buildDetalleItem('Dificultad',
+                  clase['dificultad']?.toString() ?? 'Sin especificar'),
               _buildDetalleItem(
-                  'Duración', '${clase['duracion_minutos']} minutos'),
+                  'Horario', clase['horario']?.toString() ?? 'No disponible'),
+              _buildDetalleItem('Capacidad',
+                  '${clase['capacidad']?.toString() ?? '0'} personas'),
+              _buildDetalleItem('Duración',
+                  '${clase['duracion_minutos']?.toString() ?? '0'} minutos'),
+              _buildDetalleItem('Precio',
+                  '\$${(clase['precio'] is num) ? (clase['precio'] as num).toStringAsFixed(2) : (clase['precio']?.toString() ?? '0.00')}'),
               _buildDetalleItem(
-                  'Precio', '\$${clase['precio']?.toStringAsFixed(2)}'),
-              _buildDetalleItem(
-                  'Estado', clase['activa'] ? 'Activa' : 'Inactiva'),
-              _buildDetalleItem(
-                  'Descripción', clase['descripcion'] ?? 'Sin descripción'),
+                  'Estado', (clase['activa'] == true) ? 'Activa' : 'Inactiva'),
+              _buildDetalleItem('Descripción',
+                  clase['descripcion']?.toString() ?? 'Sin descripción'),
             ],
           ),
         ),

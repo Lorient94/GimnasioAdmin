@@ -15,8 +15,11 @@ class ContenidoRepository {
     String? palabraClave,
   }) async {
     try {
+      print('🔍 ContenidoRepository: Obteniendo contenido...');
+      print('🌐 URL: $baseUrl/api/admin/contenidos/');
+
       final response = await dio.get(
-        '$baseUrl/api/admin/contenidos',
+        '$baseUrl/api/admin/contenidos/',
         queryParameters: {
           if (soloActivos != null) 'solo_activos': soloActivos,
           if (categoria != null) 'categoria': categoria,
@@ -24,8 +27,15 @@ class ContenidoRepository {
           if (palabraClave != null) 'palabra_clave': palabraClave,
         },
       );
+
+      print(
+          '✅ ContenidoRepository: Response recibida - ${response.statusCode}');
+      print('📦 Datos: ${response.data}');
+
       return response.data;
     } on DioException catch (e) {
+      print('❌ ContenidoRepository Error: ${e.message}');
+      print('❌ Response: ${e.response?.data}');
       throw Exception('Error al obtener contenido: ${e.response?.data}');
     }
   }
@@ -46,7 +56,7 @@ class ContenidoRepository {
       Map<String, dynamic> datosContenido) async {
     try {
       final response = await dio.post(
-        '$baseUrl/api/admin/contenidos',
+        '$baseUrl/api/admin/contenidos/',
         data: datosContenido,
       );
       return response.data;

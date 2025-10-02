@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from models.inscripcion import Inscripcion, EstadoInscripcion
+from models.inscripcion import Inscripcion, EstadoInscripcion, InscripcionRead
 
 class RepositorioInscripciones(ABC):
     @abstractmethod
@@ -10,7 +10,15 @@ class RepositorioInscripciones(ABC):
     @abstractmethod
     def consultar_inscripcion(self, inscripcion_id: int) -> Optional[Inscripcion]:
         pass
-
+    
+    @abstractmethod
+    def consultar_inscripcion_completa(self, inscripcion_id: int) -> Optional[InscripcionRead]:
+        pass
+        
+    @abstractmethod
+    def listar_todas_las_inscripciones(self) -> List[InscripcionRead]:
+        pass
+    
     @abstractmethod
     def actualizar_inscripcion(self, inscripcion_id: int, datos_actualizacion: dict) -> Optional[Inscripcion]:
         pass
@@ -24,6 +32,10 @@ class RepositorioInscripciones(ABC):
         pass
 
     @abstractmethod
+    def reactivar_inscripcion(self, inscripcion_id: int) -> Optional[Inscripcion]:
+        pass
+    
+    @abstractmethod
     def completar_inscripcion(self, inscripcion_id: int) -> bool:
         pass
 
@@ -36,14 +48,17 @@ class RepositorioInscripciones(ABC):
         pass
 
     @abstractmethod
-    def listar_inscripciones(self, estado: Optional[EstadoInscripcion] = None, 
-                           cliente_dni: Optional[str] = None, 
-                           clase_id: Optional[int] = None) -> List[Inscripcion]:
+    def listar_todas_las_inscripciones(self) -> List[InscripcionRead]:
+        pass
+    
+    @abstractmethod
+    def consultar_inscripcion_completa(self, inscripcion_id: int) -> Optional[InscripcionRead]:
         pass
 
     @abstractmethod
     def marcar_pagado(self, inscripcion_id: int) -> bool:
         pass
+    
 
     @abstractmethod
     def obtener_estadisticas(self) -> dict:

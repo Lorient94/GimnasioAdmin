@@ -58,15 +58,41 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
             return Center(child: Text('Error: ${state.message}'));
           if (state is UsuarioLoaded) {
             final list = state.usuariosFiltrados;
-            if (list.isEmpty) return const Center(child: Text('Sin usuarios'));
+            if (list.isEmpty)
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Sin usuarios'),
+                    const SizedBox(height: 8),
+                    ElevatedButton.icon(
+                        onPressed: _mostrarCrear,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Agregar usuario'))
+                  ],
+                ),
+              );
             return ListView.builder(
                 itemCount: list.length,
                 itemBuilder: (context, index) =>
                     UsuarioCardWidget(usuario: list[index]));
           }
-          return const Center(child: Text('Sin datos'));
+          return Center(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text('Sin datos'),
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+                onPressed: _mostrarCrear,
+                icon: const Icon(Icons.add),
+                label: const Text('Agregar usuario'))
+          ]));
         }))
       ]),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _mostrarCrear,
+        child: const Icon(Icons.add),
+        tooltip: 'Agregar usuario',
+      ),
     );
   }
 }

@@ -15,6 +15,10 @@ class _CrearUsuarioWidgetState extends State<CrearUsuarioWidget> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nombreCtrl = TextEditingController();
   final TextEditingController _dniCtrl = TextEditingController();
+  final TextEditingController _correoCtrl = TextEditingController();
+  final TextEditingController _telefonoCtrl = TextEditingController();
+  final TextEditingController _ciudadCtrl = TextEditingController();
+  DateTime? _fechaNacimiento;
   bool _loading = false;
 
   @override
@@ -24,6 +28,14 @@ class _CrearUsuarioWidgetState extends State<CrearUsuarioWidget> {
     if (u != null) {
       if (u['nombre'] != null) _nombreCtrl.text = u['nombre'].toString();
       if (u['dni'] != null) _dniCtrl.text = u['dni'].toString();
+      if (u['correo'] != null) _correoCtrl.text = u['correo'].toString();
+      if (u['telefono'] != null) _telefonoCtrl.text = u['telefono'].toString();
+      if (u['ciudad'] != null) _ciudadCtrl.text = u['ciudad'].toString();
+      if (u['fecha_nacimiento'] != null) {
+        try {
+          _fechaNacimiento = DateTime.parse(u['fecha_nacimiento'].toString());
+        } catch (_) {}
+      }
     }
   }
 
@@ -31,6 +43,9 @@ class _CrearUsuarioWidgetState extends State<CrearUsuarioWidget> {
   void dispose() {
     _nombreCtrl.dispose();
     _dniCtrl.dispose();
+    _correoCtrl.dispose();
+    _telefonoCtrl.dispose();
+    _ciudadCtrl.dispose();
     super.dispose();
   }
 
@@ -38,7 +53,16 @@ class _CrearUsuarioWidgetState extends State<CrearUsuarioWidget> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     final cubit = context.read<UsuarioCubit>();
-    final datos = {'nombre': _nombreCtrl.text, 'dni': _dniCtrl.text};
+    final datos = {
+      'nombre': _nombreCtrl.text,
+      'dni': _dniCtrl.text,
+      'correo': _correoCtrl.text,
+      'telefono': _telefonoCtrl.text,
+      'ciudad': _ciudadCtrl.text.isNotEmpty ? _ciudadCtrl.text : null,
+      'fecha_nacimiento': _fechaNacimiento != null
+          ? _fechaNacimiento!.toIso8601String().split('T').first
+          : null,
+    };
     try {
       if (widget.usuarioInicial != null &&
           widget.usuarioInicial!.containsKey('id')) {
@@ -81,10 +105,57 @@ class _CrearUsuarioWidgetState extends State<CrearUsuarioWidget> {
                     (v == null || v.isEmpty) ? 'Ingresa nombre' : null),
             const SizedBox(height: 8),
             TextFormField(
+                controller: _correoCtrl,
+                decoration: const InputDecoration(labelText: 'Correo'),
+                keyboardType: TextInputType.emailAddress,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Ingresa correo';
+                  final regex = RegExp(r"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+                  if (!regex.hasMatch(v)) return 'Correo inválido';
+                  return null;
+                }),
+            const SizedBox(height: 8),
+            TextFormField(
                 controller: _dniCtrl,
                 decoration: const InputDecoration(labelText: 'DNI'),
                 validator: (v) =>
                     (v == null || v.isEmpty) ? 'Ingresa DNI' : null),
+            const SizedBox(height: 8),
+            TextFormField(
+                controller: _telefonoCtrl,
+                decoration: const InputDecoration(labelText: 'Teléfono'),
+                keyboardType: TextInputType.phone,
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'Ingresa teléfono' : null),
+            const SizedBox(height: 8),
+            TextFormField(
+                controller: _ciudadCtrl,
+                decoration: const InputDecoration(labelText: 'Ciudad'),
+                validator: (v) => null),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(
+                child: Text(_fechaNacimiento == null
+                    ? 'Fecha de nacimiento no seleccionada'
+                    : 'Fecha: ${_fechaNacimiento!.toIso8601String().split('T').first}'),
+              ),
+              TextButton(
+                  onPressed: _loading
+                      ? null
+                      : () async {
+                          final now = DateTime.now();
+                          final initial =
+                              _fechaNacimiento ?? DateTime(1990, 1, 1);
+                          final picked = await showDatePicker(
+                              context: context,
+                              initialDate: initial,
+                              firstDate: DateTime(1900),
+                              lastDate: now);
+                          if (picked != null)
+                            setState(() => _fechaNacimiento = picked);
+                        },
+                  child: const Text('Seleccionar'))
+            ]),
             const SizedBox(height: 12),
             Row(mainAxisAlignment: MainAxisAlignment.end, children: [
               TextButton(

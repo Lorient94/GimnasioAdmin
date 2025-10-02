@@ -1,15 +1,19 @@
-// main.dart - Usando repositorios específicos existentes
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-// Importaciones de screens (usa las que existen en lib/Screens)
-import 'Screens/clase_screen.dart';
-import 'Screens/inscripciones_screen.dart';
+// Importaciones de screens
+import 'screens/clase_screen.dart';
+import 'screens/inscripciones_screen.dart';
+import 'screens/usuarios_screen.dart';
+import 'screens/informacion_screen.dart';
+import 'screens/contenido_screen.dart';
+import 'screens/pago_screen.dart';
+import 'screens/transacciones_screen.dart';
 
-// Importaciones de repositorios específicos (usando los que ya tienes)
+// Importaciones de repositorios
 import 'repositorio_api/clase_repositorio.dart';
 import 'repositorio_api/contenido_repositorio.dart';
 import 'repositorio_api/informacion_repositorio.dart';
@@ -26,77 +30,35 @@ import 'Cubits/informacion_cubit.dart';
 import 'Cubits/mercado_pago_cubit.dart';
 import 'Cubits/transaccion_cubit.dart';
 import 'Cubits/usuario_cubit.dart';
-// Screen de contenido
-import 'Screens/contenido_screen.dart';
-import 'Screens/informacion_screen.dart';
-import 'Screens/pago_screen.dart';
-import 'Screens/transacciones_screen.dart';
-import 'Screens/usuarios_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('es_ES', null);
-
-  // Configuración de Dio
-  final dio = Dio();
-  // Use localhost for local development. If you're testing from another device
-  // on the same LAN, replace with the host IP (e.g. 'http://192.168.0.102:8000').
-  final baseUrl = 'http://127.0.0.1:8000';
-
-  // Inicializar todos los repositorios específicos
-  final claseRepository = ClaseRepository(dio: dio, baseUrl: baseUrl);
-  final inscripcionRepository =
-      InscripcionRepository(dio: dio, baseUrl: baseUrl);
-  final usuarioRepository = UsuarioRepository(dio: dio, baseUrl: baseUrl);
-  final contenidoRepository = ContenidoRepository(dio: dio, baseUrl: baseUrl);
-  final informacionRepository =
-      InformacionRepository(dio: dio, baseUrl: baseUrl);
-  final mercadoPagoRepository =
-      MercadoPagoRepository(dio: dio, baseUrl: baseUrl);
-  final transaccionRepository =
-      TransaccionRepository(dio: dio, baseUrl: baseUrl);
-
-  // Test de conexión básico
-  try {
-    final response = await dio.get('$baseUrl/');
-    print('✅ Conexión exitosa: ${response.statusCode}');
-  } catch (e) {
-    print('❌ Error de conexión: $e');
-  }
-
-  runApp(MyApp(
-    claseRepository: claseRepository,
-    inscripcionRepository: inscripcionRepository,
-    usuarioRepository: usuarioRepository,
-    contenidoRepository: contenidoRepository,
-    informacionRepository: informacionRepository,
-    mercadoPagoRepository: mercadoPagoRepository,
-    transaccionRepository: transaccionRepository,
-  ));
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final ClaseRepository claseRepository;
-  final InscripcionRepository inscripcionRepository;
-  final UsuarioRepository usuarioRepository;
-  final ContenidoRepository contenidoRepository;
-  final InformacionRepository informacionRepository;
-  final MercadoPagoRepository mercadoPagoRepository;
-  final TransaccionRepository transaccionRepository;
-
-  const MyApp({
-    super.key,
-    required this.claseRepository,
-    required this.inscripcionRepository,
-    required this.usuarioRepository,
-    required this.contenidoRepository,
-    required this.informacionRepository,
-    required this.mercadoPagoRepository,
-    required this.transaccionRepository,
-  });
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Configuración de Dio
+    final dio = Dio();
+    final baseUrl = 'http://127.0.0.1:8000';
+
+    // Inicializar repositorios
+    final claseRepository = ClaseRepository(dio: dio, baseUrl: baseUrl);
+    final inscripcionRepository =
+        InscripcionRepository(dio: dio, baseUrl: baseUrl);
+    final usuarioRepository = UsuarioRepository(dio: dio, baseUrl: baseUrl);
+    final contenidoRepository = ContenidoRepository(dio: dio, baseUrl: baseUrl);
+    final informacionRepository =
+        InformacionRepository(dio: dio, baseUrl: baseUrl);
+    final mercadoPagoRepository =
+        MercadoPagoRepository(dio: dio, baseUrl: baseUrl);
+    final transaccionRepository =
+        TransaccionRepository(dio: dio, baseUrl: baseUrl);
+
     return MultiBlocProvider(
       providers: [
         BlocProvider<ClaseCubit>(
@@ -107,7 +69,8 @@ class MyApp extends StatelessWidget {
               InscripcionCubit(repository: inscripcionRepository),
         ),
         BlocProvider<ContenidoCubit>(
-          create: (context) => ContenidoCubit(repository: contenidoRepository),
+          create: (context) => ContenidoCubit(repository: contenidoRepository)
+            ..cargarContenidos(),
         ),
         BlocProvider<InformacionCubit>(
           create: (context) =>
@@ -124,8 +87,6 @@ class MyApp extends StatelessWidget {
           create: (context) =>
               TransaccionCubit(repository: transaccionRepository),
         ),
-        // Si tienes cubits/ blocs para usuario y contenido, agrégalos aquí.
-        // Por ahora mantenemos los repositorios disponibles y las pantallas
       ],
       child: MaterialApp(
         title: 'Gimnasio ABC - Sistema de Gestión',
@@ -149,27 +110,18 @@ class MyApp extends StatelessWidget {
           mercadoPagoRepository: mercadoPagoRepository,
           transaccionRepository: transaccionRepository,
         ),
-        routes: {
-          '/usuario': (context) => const UsuariosScreen(),
-          '/clases': (context) => ClaseScreen(),
-          '/inscripciones': (context) => InscripcionesScreen(),
-          '/informacion': (context) => InformacionScreen(),
-          '/contenido': (context) => ContenidoScreen(),
-          '/pagos': (context) => PagoScreen(),
-          '/transacciones': (context) => TransaccionesScreen(),
-        },
       ),
     );
   }
 
-  ThemeData _buildTheme() {
+  static ThemeData _buildTheme() {
     return ThemeData(
       primarySwatch: Colors.blue,
-      primaryColor: Color(0xFF1A73E8),
+      primaryColor: const Color(0xFF1A73E8),
       colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue)
-          .copyWith(secondary: Color(0xFF34A853)),
+          .copyWith(secondary: const Color(0xFF34A853)),
       scaffoldBackgroundColor: Colors.grey[50],
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: Color(0xFF1A73E8),
         elevation: 2,
         iconTheme: IconThemeData(color: Colors.white),
@@ -179,41 +131,15 @@ class MyApp extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
-      inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Color(0xFF1A73E8),
-          foregroundColor: Colors.white,
-          padding: EdgeInsets.symmetric(vertical: 16),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 2,
-          textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-      ),
-      cardTheme: CardTheme(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      ),
     );
   }
 
-  ThemeData _buildDarkTheme() {
+  static ThemeData _buildDarkTheme() {
     return ThemeData.dark().copyWith(
-      primaryColor: Color(0xFF1A73E8),
-      colorScheme: ColorScheme.dark(
+      primaryColor: const Color(0xFF1A73E8),
+      colorScheme: const ColorScheme.dark(
         primary: Color(0xFF1A73E8),
         secondary: Color(0xFF34A853),
-      ),
-      cardTheme: CardTheme(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -228,7 +154,7 @@ class HomeScreen extends StatelessWidget {
   final MercadoPagoRepository mercadoPagoRepository;
   final TransaccionRepository transaccionRepository;
 
-  HomeScreen({
+  const HomeScreen({
     super.key,
     required this.claseRepository,
     required this.inscripcionRepository,
@@ -239,23 +165,11 @@ class HomeScreen extends StatelessWidget {
     required this.transaccionRepository,
   });
 
-  static const List<_MenuOption> options = [
-    _MenuOption('Usuario', Icons.person, '/usuario', Colors.blue),
-    _MenuOption('Clases', Icons.fitness_center, '/clases', Colors.green),
-    _MenuOption(
-        'Inscripciones', Icons.assignment, '/inscripciones', Colors.orange),
-    _MenuOption('Información', Icons.info, '/informacion', Colors.purple),
-    _MenuOption('Contenido', Icons.video_library, '/contenido', Colors.red),
-    _MenuOption('Pagos', Icons.payment, '/pagos', Colors.teal),
-    _MenuOption(
-        'Transacciones', Icons.history, '/transacciones', Colors.indigo),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Sistema de Gestión - Gimnasio ABC'),
+        title: const Text('Sistema de Gestión - Gimnasio ABC'),
         centerTitle: true,
         elevation: 0,
       ),
@@ -265,29 +179,24 @@ class HomeScreen extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1A73E8).withOpacity(0.1),
-              Color(0xFF34A853).withOpacity(0.05),
+              const Color(0xFF1A73E8).withOpacity(0.1),
+              const Color(0xFF34A853).withOpacity(0.05),
             ],
           ),
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
                 _buildHeader(),
-                SizedBox(height: 24),
-
-                // Título de sección
+                const SizedBox(height: 16),
                 _buildSectionTitle(),
-                SizedBox(height: 16),
-
-                // Grid de opciones
-                Expanded(child: _buildOptionsGrid(context)),
-
-                // Footer
+                const SizedBox(height: 12),
+                Expanded(
+                  child: _buildOptionsGrid(context),
+                ),
                 _buildFooter(),
               ],
             ),
@@ -299,9 +208,9 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildHeader() {
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color.fromARGB(255, 176, 225, 244),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -314,31 +223,32 @@ class HomeScreen extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
+            width: 50,
+            height: 50,
+            decoration: const BoxDecoration(
               color: Color(0xFF1A73E8),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.fitness_center, size: 32, color: Colors.white),
+            child:
+                const Icon(Icons.fitness_center, size: 28, color: Colors.white),
           ),
-          SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Gimnasio ABC',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1A73E8),
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   'Sistema Integral de Gestión',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -354,89 +264,144 @@ class HomeScreen extends StatelessWidget {
       child: Text(
         'Módulos del Sistema',
         style: TextStyle(
-          fontSize: 20,
+          fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Colors.grey[800],
+          color: const Color.fromARGB(255, 255, 253, 253),
         ),
       ),
     );
   }
 
   Widget _buildOptionsGrid(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: 1.1,
-      children:
-          options.map((option) => _buildMenuCard(context, option)).toList(),
-    );
-  }
+    final options = [
+      _MenuOption('Usuario', Icons.person,
+          () => _navigateToScreen(context, UsuariosScreen()), Colors.blue),
+      _MenuOption('Clases', Icons.fitness_center,
+          () => _navigateToScreen(context, ClaseScreen()), Colors.green),
+      _MenuOption(
+          'Inscripciones',
+          Icons.assignment,
+          () => _navigateToScreen(context, InscripcionesScreen()),
+          Colors.orange),
+      _MenuOption('Información', Icons.info,
+          () => _navigateToScreen(context, InformacionScreen()), Colors.purple),
+      _MenuOption(
+          'Contenido',
+          Icons.video_library,
+          () => _navigateToScreen(context, const ContenidoScreen()),
+          Colors.red),
+      _MenuOption('Pagos', Icons.payment,
+          () => _navigateToScreen(context, PagoScreen()), Colors.teal),
+      _MenuOption(
+          'Transacciones',
+          Icons.history,
+          () => _navigateToScreen(context, TransaccionesScreen()),
+          Colors.indigo),
+    ];
 
-  Widget _buildFooter() {
     return Column(
       children: [
-        SizedBox(height: 20),
-        Center(
-          child: Text(
-            '© 2025 Gimnasio ABC - v1.0.0',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+        // Primera fila - 3 botones
+        Expanded(
+          child: Row(
+            children: [
+              _buildSquareButton(options[0]),
+              const SizedBox(width: 8),
+              _buildSquareButton(options[1]),
+              const SizedBox(width: 8),
+              _buildSquareButton(options[2]),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Segunda fila - 3 botones
+        Expanded(
+          child: Row(
+            children: [
+              _buildSquareButton(options[3]),
+              const SizedBox(width: 8),
+              _buildSquareButton(options[4]),
+              const SizedBox(width: 8),
+              _buildSquareButton(options[5]),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Tercera fila - 1 botón centrado
+        Expanded(
+          child: Row(
+            children: [
+              const Spacer(),
+              _buildSquareButton(options[6]),
+              const Spacer(flex: 2), // Doble espacio para centrar
+            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildMenuCard(BuildContext context, _MenuOption option) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.pushNamed(context, option.route),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                option.color.withOpacity(0.1),
-                option.color.withOpacity(0.05),
-              ],
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
+  Widget _buildSquareButton(_MenuOption option) {
+    return Expanded(
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: option.onTap,
+          child: Container(
+            // El contenedor será cuadrado automáticamente por el Expanded
+            padding: const EdgeInsets.all(12),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: option.color.withOpacity(0.1),
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(option.icon, size: 24, color: option.color),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Text(
                   option.text,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
+                    color: const Color.fromARGB(255, 255, 253, 253),
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 4),
-                Icon(Icons.arrow_forward_ios, size: 12, color: option.color),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Column(
+      children: [
+        const SizedBox(height: 16),
+        Center(
+          child: Text(
+            '© 2025 Gimnasio ABC',
+            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _navigateToScreen(BuildContext context, Widget screen) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => screen),
     );
   }
 }
@@ -444,19 +409,8 @@ class HomeScreen extends StatelessWidget {
 class _MenuOption {
   final String text;
   final IconData icon;
-  final String route;
+  final VoidCallback onTap;
   final Color color;
 
-  const _MenuOption(this.text, this.icon, this.route, this.color);
+  const _MenuOption(this.text, this.icon, this.onTap, this.color);
 }
-
-// Placeholder screens - Reemplaza con tus implementaciones reales
-// UsuariosScreen moved to lib/Screens/usuarios_screen.dart
-
-// InformacionScreen moved to lib/Screens/informacion_screen.dart
-
-// ContenidoScreen moved to lib/Screens/contenido_screen.dart
-
-// PagoScreen moved to lib/Screens/pago_screen.dart
-
-// TransaccionesScreen moved to lib/Screens/transacciones_screen.dart
