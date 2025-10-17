@@ -1,5 +1,11 @@
 # routers/mercado_pago_router.py
+from datetime import datetime
+import os
+import uuid
 from fastapi import APIRouter, HTTPException, Depends, Request
+from pydantic import BaseModel
+import requests
+from sqlalchemy import select
 from sqlmodel import Session
 from typing import Dict, Any
 import json
@@ -8,9 +14,41 @@ from Adaptadores.adaptadorPagoSQL import AdaptadorPagoSQL
 from database import get_session
 from Casos_de_uso.Pagos.procesar_pago_mercadopago import ProcesarPagoMercadoPagoCase
 from Casos_de_uso.Pagos.verificar_estado_pago import VerificarEstadoPagoCase
+from models.cliente import Cliente
+from models.pago import EstadoPago, Pago, PagoCreate
+from models.transaccion import Transaccion
 from servicios.mercado_pago import MercadoPagoService
 
+MP_ACCESS_TOKEN = os.getenv("MERCADOPAGO_ACCESS_TOKEN")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+MP_BASE_URL = "https://api.mercadopago.com/checkout/preferences"
+HEADERS = {"Authorization": f"Bearer {MP_ACCESS_TOKEN}"}
+
 mercado_pago_router = APIRouter(prefix="/api/mercado-pago", tags=["mercado-pago"])
+class PreferenciaCreate(BaseModel):
+    cliente_dni: str
+    monto: float
+    
+@mercado_pago_router.post("/crear-preferencia")
+def crear_preferencia(preferencia: PreferenciaCreate, session: Session = Depends(get_session)):
+    cliente = session.exec(select(Cliente).where(Cliente.dni == preferencia.cliente_dni)).first()
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    
+    transaccion = Transaccion(
+        cliente_dni=cliente.dni,
+        monto=preferencia.monto,
+        fecha=datetime.utcnow(),
+        estado=EstadoPago.PENDIENTE,
+        referencia=f"MP-{uuid.uuid4().hex[:8].upper()}"
+    )
+    
+    session.add(transaccion)
+    session.commit()
+    session.refresh(transaccion)
+    
+    return transaccion
 
 @mercado_pago_router.post("/crear-pago")
 def crear_pago_mercadopago(

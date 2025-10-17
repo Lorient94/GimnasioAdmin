@@ -1,15 +1,14 @@
-// widgets/crear_inscripcion_widget.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../Cubits/inscripcion_cubit.dart';
+import '../Cubits/usuario_cubit.dart';
+import '../Cubits/clase_cubit.dart';
 
 class CrearInscripcionWidget extends StatefulWidget {
-  final Function(Map<String, dynamic>) onGuardar;
   final VoidCallback onCancelar;
 
-  const CrearInscripcionWidget({
-    Key? key,
-    required this.onGuardar,
-    required this.onCancelar,
-  }) : super(key: key);
+  const CrearInscripcionWidget({Key? key, required this.onCancelar})
+      : super(key: key);
 
   @override
   State<CrearInscripcionWidget> createState() => _CrearInscripcionWidgetState();
@@ -18,9 +17,74 @@ class CrearInscripcionWidget extends StatefulWidget {
 class _CrearInscripcionWidgetState extends State<CrearInscripcionWidget> {
   final _formKey = GlobalKey<FormState>();
   final Map<String, dynamic> _datosInscripcion = {};
+  dynamic _clienteSeleccionado;
+  dynamic _claseSeleccionada;
+  double? _precioSeleccionado;
+
+  late List<Map<String, dynamic>> _clientes;
+  late List<Map<String, dynamic>> _clases;
+  bool _cargando = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarDatosIniciales();
+  }
+
+  Future<void> _cargarDatosIniciales() async {
+    try {
+      // Obtener datos desde cubits
+      final usuarioCubit = context.read<UsuarioCubit>();
+      final claseCubit = context.read<ClaseCubit>();
+
+      await usuarioCubit.cargarUsuarios(soloActivos: true);
+      await claseCubit.cargarClases();
+
+      setState(() {
+        _clientes = (usuarioCubit.state as dynamic)
+            .usuariosFiltrados
+            .cast<Map<String, dynamic>>();
+        _clases = (claseCubit.state as dynamic)
+            .clasesFiltradas
+            .cast<Map<String, dynamic>>();
+        _cargando = false;
+      });
+    } catch (e) {
+      setState(() => _cargando = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cargar datos: $e')),
+      );
+    }
+  }
+
+  void _guardarInscripcion() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    _formKey.currentState!.save();
+
+    const estadoMap = {
+      'pendiente': 'pendiente',
+      'activa': 'activo',
+    };
+
+    _datosInscripcion['cliente_dni'] = _clienteSeleccionado['dni'];
+    _datosInscripcion['clase_id'] = _claseSeleccionada['id'];
+    _datosInscripcion['precio'] = _precioSeleccionado ?? 0.0;
+    _datosInscripcion['estado'] =
+        estadoMap[_datosInscripcion['estado']] ?? 'pendiente'; // <-- aquí
+    _datosInscripcion['pagado'] = false;
+    _datosInscripcion['fecha_inscripcion'] = DateTime.now().toIso8601String();
+
+    final cubit = context.read<InscripcionCubit>();
+    await cubit.crearInscripcion(_datosInscripcion);
+
+    if (mounted) widget.onCancelar();
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_cargando) return const Center(child: CircularProgressIndicator());
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -45,35 +109,45 @@ class _CrearInscripcionWidgetState extends State<CrearInscripcionWidget> {
               key: _formKey,
               child: ListView(
                 children: [
-                  TextFormField(
+                  DropdownButtonFormField<dynamic>(
                     decoration: const InputDecoration(
-                      labelText: 'DNI del Cliente',
+                      labelText: 'Seleccionar Cliente',
                       border: OutlineInputBorder(),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor ingrese el DNI';
-                      }
-                      return null;
+                    items: _clientes.map((cliente) {
+                      return DropdownMenuItem(
+                        value: cliente,
+                        child: Text("${cliente['nombre']} (${cliente['dni']})"),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() => _clienteSeleccionado = value);
                     },
-                    onSaved: (value) =>
-                        _datosInscripcion['cliente_dni'] = value,
+                    validator: (value) =>
+                        value == null ? 'Seleccione un cliente' : null,
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
+                  DropdownButtonFormField<dynamic>(
                     decoration: const InputDecoration(
-                      labelText: 'ID de la Clase',
+                      labelText: 'Seleccionar Clase',
                       border: OutlineInputBorder(),
                     ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor ingrese el ID de la clase';
-                      }
-                      return null;
+                    items: _clases.map((clase) {
+                      return DropdownMenuItem(
+                        value: clase,
+                        child: Text("${clase['nombre']}"),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _claseSeleccionada = value;
+                        _precioSeleccionado = double.tryParse(
+                                value['precio']?.toString() ?? '0') ??
+                            0.0;
+                      });
                     },
-                    onSaved: (value) => _datosInscripcion['clase_id'] =
-                        int.tryParse(value ?? ''),
+                    validator: (value) =>
+                        value == null ? 'Seleccione una clase' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -81,15 +155,9 @@ class _CrearInscripcionWidgetState extends State<CrearInscripcionWidget> {
                       labelText: 'Precio',
                       border: OutlineInputBorder(),
                     ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor ingrese el precio';
-                      }
-                      return null;
-                    },
-                    onSaved: (value) => _datosInscripcion['precio'] =
-                        double.tryParse(value ?? ''),
+                    readOnly: true,
+                    controller: TextEditingController(
+                        text: _precioSeleccionado?.toStringAsFixed(2) ?? ''),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
@@ -97,18 +165,14 @@ class _CrearInscripcionWidgetState extends State<CrearInscripcionWidget> {
                       labelText: 'Estado',
                       border: OutlineInputBorder(),
                     ),
+                    value: _datosInscripcion['estado'],
                     items: const [
                       DropdownMenuItem(
                           value: 'pendiente', child: Text('Pendiente')),
                       DropdownMenuItem(value: 'activa', child: Text('Activa')),
                     ],
-                    onChanged: (value) => _datosInscripcion['estado'] = value,
-                    validator: (value) {
-                      if (value == null) {
-                        return 'Por favor seleccione un estado';
-                      }
-                      return null;
-                    },
+                    onChanged: (value) =>
+                        _datosInscripcion['estado'] = value ?? 'pendiente',
                   ),
                   const SizedBox(height: 24),
                   Row(
@@ -135,12 +199,5 @@ class _CrearInscripcionWidgetState extends State<CrearInscripcionWidget> {
         ],
       ),
     );
-  }
-
-  void _guardarInscripcion() {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      widget.onGuardar(_datosInscripcion);
-    }
   }
 }

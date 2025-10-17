@@ -117,14 +117,17 @@ class InscripcionRepository {
   }
 
   // ==================== ALERTAS ====================
-  Future<List<dynamic>> obtenerAlertasCuposCriticos(
+  Future<List<Map<String, dynamic>>> obtenerAlertasCuposCriticos(
       [int porcentajeAlerta = 80]) async {
     try {
       final response = await dio.get(
         '$baseUrl/api/admin/inscripciones/alertas/cupos-criticos',
         queryParameters: {'porcentaje_alerta': porcentajeAlerta},
       );
-      return response.data['alertas'] ?? [];
+
+      // 🔹 Convertir explícitamente la lista de alertas
+      final List<dynamic> rawAlertas = response.data['alertas'] ?? [];
+      return rawAlertas.map((e) => e as Map<String, dynamic>).toList();
     } on DioException catch (e) {
       throw Exception(
           'Error al obtener alertas cupos críticos: ${e.response?.data}');

@@ -1,16 +1,28 @@
 part of 'mercado_pago_cubit.dart';
 
-abstract class MercadoPagoState {}
+abstract class MercadoPagoState extends Equatable {
+  const MercadoPagoState();
 
-class MercadoPagoInitial extends MercadoPagoState {}
+  @override
+  List<Object?> get props => [];
+}
 
-class MercadoPagoLoading extends MercadoPagoState {}
+class MercadoPagoInitial extends MercadoPagoState {
+  const MercadoPagoInitial();
+}
+
+class MercadoPagoLoading extends MercadoPagoState {
+  const MercadoPagoLoading();
+}
 
 class MercadoPagoLoaded extends MercadoPagoState {
   final List<Map<String, dynamic>> pagos;
   final List<Map<String, dynamic>> pagosFiltrados;
 
-  MercadoPagoLoaded({required this.pagos, required this.pagosFiltrados});
+  const MercadoPagoLoaded({
+    required this.pagos,
+    required this.pagosFiltrados,
+  });
 
   MercadoPagoLoaded copyWith({
     List<Map<String, dynamic>>? pagos,
@@ -21,9 +33,15 @@ class MercadoPagoLoaded extends MercadoPagoState {
       pagosFiltrados: pagosFiltrados ?? this.pagosFiltrados,
     );
   }
+
+  @override
+  List<Object?> get props => [pagos, pagosFiltrados];
 }
 
 class MercadoPagoError extends MercadoPagoState {
   final String message;
-  MercadoPagoError({required this.message});
+  const MercadoPagoError(this.message);
+
+  @override
+  List<Object?> get props => [message];
 }

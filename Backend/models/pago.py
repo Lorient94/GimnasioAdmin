@@ -28,9 +28,7 @@ class Pago(SQLModel, table=True):
     referencia: Optional[str] = Field(default=None, unique=True, index=True)
     metodo_pago: str  # Quitar Optional
     observaciones: Optional[str] = None
-    # nota: no incluir `mercado_pago_id` en el modelo de tabla si la columna
-    # no existe en la base de datos. Si se desea persistir este campo,
-    # agregar la columna en la BD o crear una migración.
+ 
 
     # Relaciones (usando string para evitar import circular)
     transaccion: Optional["Transaccion"] = Relationship(back_populates="pagos")
@@ -46,7 +44,11 @@ class PagoBase(BaseModel):
     observaciones: Optional[str] = None
 
 class PagoCreate(PagoBase):
-    pass
+    id_usuario: str
+    monto: float
+    concepto: Optional[str] = None
+    metodo_pago: Optional[str] = "mercado_pago"
+    transaccion_id: Optional[int] = None
 
 class PagoRead(PagoBase):
     id: int

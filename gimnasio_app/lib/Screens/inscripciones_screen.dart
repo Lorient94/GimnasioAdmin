@@ -48,23 +48,13 @@ class _InscripcionesScreenState extends State<InscripcionesScreen> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
           child: CrearInscripcionWidget(
-            onGuardar: (datosInscripcion) async {
-              final cubit = context.read<InscripcionCubit>();
-              await cubit.crearInscripcion(datosInscripcion);
-              if (mounted) Navigator.of(context).pop();
+            onCancelar: () {
+              Navigator.of(context).pop();
+              _cargarInscripciones();
             },
-            onCancelar: () => Navigator.of(context).pop(),
           ),
         ),
       ),
-    );
-  }
-
-  void _mostrarReportes() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => _buildPanelReportes(),
     );
   }
 
@@ -85,17 +75,41 @@ class _InscripcionesScreenState extends State<InscripcionesScreen> {
                 _buildBotonReporte(
                   icon: Icons.people,
                   titulo: 'Clases Más Populares',
-                  onTap: _generarReporteClasesPopulares,
+                  onTap: () async {
+                    final cubit = context.read<InscripcionCubit>();
+                    try {
+                      final reporte =
+                          await cubit.generarReporteClasesPopulares();
+                      _mostrarReporteDialog('Clases Más Populares', reporte);
+                    } catch (e) {
+                      _mostrarMensaje('Error al generar reporte: $e',
+                          esError: true);
+                    }
+                  },
                 ),
                 _buildBotonReporte(
                   icon: Icons.star,
                   titulo: 'Clientes Más Activos',
-                  onTap: _generarReporteClientesActivos,
+                  onTap: () async {
+                    final cubit = context.read<InscripcionCubit>();
+                    try {
+                      final reporte =
+                          await cubit.generarReporteClientesActivos();
+                      _mostrarReporteDialog('Clientes Más Activos', reporte);
+                    } catch (e) {
+                      _mostrarMensaje('Error al generar reporte: $e',
+                          esError: true);
+                    }
+                  },
                 ),
                 _buildBotonReporte(
                   icon: Icons.warning,
                   titulo: 'Alertas de Cupos Críticos',
-                  onTap: _mostrarAlertasCuposCriticos,
+                  onTap: () {
+                    context
+                        .read<InscripcionCubit>()
+                        .cargarAlertasCuposCriticos(porcentaje: 80);
+                  },
                 ),
               ],
             ),
@@ -120,45 +134,12 @@ class _InscripcionesScreenState extends State<InscripcionesScreen> {
     );
   }
 
-  Future<void> _generarReporteClasesPopulares() async {
-    final cubit = context.read<InscripcionCubit>();
-    try {
-      final reporte = await cubit.generarReporteClasesPopulares();
-      _mostrarReporteDialog('Clases Más Populares', reporte);
-    } catch (e) {
-      _mostrarMensaje('Error al generar reporte: $e', esError: true);
-    }
-  }
-
-  Future<void> _generarReporteClientesActivos() async {
-    final cubit = context.read<InscripcionCubit>();
-    try {
-      final reporte = await cubit.generarReporteClientesActivos();
-      _mostrarReporteDialog('Clientes Más Activos', reporte);
-    } catch (e) {
-      _mostrarMensaje('Error al generar reporte: $e', esError: true);
-    }
-  }
-
-  Future<void> _mostrarAlertasCuposCriticos() async {
-    final cubit = context.read<InscripcionCubit>();
-    try {
-      final alertas = await cubit.obtenerAlertasCuposCriticos();
-      _mostrarReporteDialog('Alertas de Cupos Críticos', alertas);
-    } catch (e) {
-      _mostrarMensaje('Error al obtener alertas: $e', esError: true);
-    }
-  }
-
   void _mostrarReporteDialog(String titulo, dynamic datos) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(titulo),
-        content: SizedBox(
-          width: 400,
-          child: _buildContenidoReporte(datos),
-        ),
+        content: SizedBox(width: 400, child: _buildContenidoReporte(datos)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -187,97 +168,113 @@ class _InscripcionesScreenState extends State<InscripcionesScreen> {
     );
   }
 
+  void _mostrarMensaje(String mensaje, {bool esError = false}) {
+    AppSnackBar.show(context, mensaje, error: esError);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gestión de Inscripciones'),
-        backgroundColor: Colors.blue[700],
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _cargarInscripciones,
-            tooltip: 'Actualizar',
-          ),
-          IconButton(
-            icon: const Icon(Icons.analytics),
-            onPressed: _mostrarReportes,
-            tooltip: 'Reportes',
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Filtros
-          FiltrosInscripcionWidget(onFiltrosCambiados: _aplicarFiltros),
-
-          // Lista de inscripciones
-          Expanded(
-            child: BlocBuilder<InscripcionCubit, InscripcionState>(
-              builder: (context, state) {
-                if (state is InscripcionLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (state is InscripcionError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error, color: Colors.red, size: 64),
-                        const SizedBox(height: 16),
-                        Text('Error: ${state.error}'),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _cargarInscripciones,
-                          child: const Text('Reintentar'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                if (state is InscripcionLoaded) {
-                  final inscripciones = state.inscripcionesFiltradas;
-
-                  if (inscripciones.isEmpty) {
-                    return const Center(
-                        child: Text('No hay inscripciones disponibles'));
+    return BlocListener<InscripcionCubit, InscripcionState>(
+      listener: (context, state) {
+        if (state is InscripcionAlertasLoaded) {
+          _mostrarReporteDialog('Alertas de Cupos Críticos', state.alertas);
+        } else if (state is InscripcionError) {
+          _mostrarMensaje('Error: ${state.error}', esError: true);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Gestión de Inscripciones'),
+          backgroundColor: Colors.blue[700],
+          foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _cargarInscripciones,
+              tooltip: 'Actualizar',
+            ),
+            IconButton(
+              icon: const Icon(Icons.analytics),
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  builder: (context) => _buildPanelReportes(),
+                );
+              },
+              tooltip: 'Reportes',
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            FiltrosInscripcionWidget(onFiltrosCambiados: _aplicarFiltros),
+            Expanded(
+              child: BlocBuilder<InscripcionCubit, InscripcionState>(
+                builder: (context, state) {
+                  if (state is InscripcionLoading) {
+                    return const Center(child: CircularProgressIndicator());
                   }
 
-                  return ListView.builder(
-                    itemCount: inscripciones.length,
-                    itemBuilder: (context, index) {
-                      final inscripcion =
-                          inscripciones[index] as Map<String, dynamic>;
-                      return InscripcionCardWidget(
-                        inscripcion: inscripcion,
-                        onCancelar: () => _cancelarInscripcion(inscripcion),
-                        onReactivar: () => _reactivarInscripcion(inscripcion),
-                        onCompletar: () => _completarInscripcion(inscripcion),
-                        onVerDetalles: () =>
-                            _verDetallesInscripcion(inscripcion),
-                      );
-                    },
-                  );
-                }
+                  if (state is InscripcionError) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error, color: Colors.red, size: 64),
+                          const SizedBox(height: 16),
+                          Text('Error: ${state.error}'),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _cargarInscripciones,
+                            child: const Text('Reintentar'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
 
-                return const Center(child: CircularProgressIndicator());
-              },
+                  if (state is InscripcionLoaded) {
+                    final inscripciones = state.inscripcionesFiltradas;
+                    if (inscripciones.isEmpty) {
+                      return const Center(
+                          child: Text('No hay inscripciones disponibles'));
+                    }
+
+                    return ListView.builder(
+                      itemCount: inscripciones.length,
+                      itemBuilder: (context, index) {
+                        final inscripcion =
+                            inscripciones[index] as Map<String, dynamic>;
+                        return InscripcionCardWidget(
+                          inscripcion: inscripcion,
+                          onCancelar: () => _cancelarInscripcion(inscripcion),
+                          onReactivar: () => _reactivarInscripcion(inscripcion),
+                          onCompletar: () => _completarInscripcion(inscripcion),
+                          onVerDetalles: () =>
+                              _verDetallesInscripcion(inscripcion),
+                        );
+                      },
+                    );
+                  }
+
+                  return const Center(child: CircularProgressIndicator());
+                },
+              ),
             ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _mostrarDialogoCrearInscripcion,
-        backgroundColor: Colors.blue[700],
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _mostrarDialogoCrearInscripcion,
+          backgroundColor: Colors.blue[700],
+          foregroundColor: Colors.white,
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
 
+  // ==================== Métodos de gestión de inscripciones ====================
   Future<void> _cancelarInscripcion(Map<String, dynamic> inscripcion) async {
     final motivo = await _mostrarDialogoMotivo('Cancelar Inscripción');
     if (motivo != null && motivo.isNotEmpty) {
@@ -293,10 +290,8 @@ class _InscripcionesScreenState extends State<InscripcionesScreen> {
 
   Future<void> _reactivarInscripcion(Map<String, dynamic> inscripcion) async {
     final confirmado = await _mostrarDialogoConfirmacion(
-      'Reactivar Inscripción',
-      '¿Estás seguro de reactivar esta inscripción?',
-    );
-
+        'Reactivar Inscripción',
+        '¿Estás seguro de reactivar esta inscripción?');
     if (confirmado) {
       final cubit = context.read<InscripcionCubit>();
       try {
@@ -310,10 +305,7 @@ class _InscripcionesScreenState extends State<InscripcionesScreen> {
 
   Future<void> _completarInscripcion(Map<String, dynamic> inscripcion) async {
     final confirmado = await _mostrarDialogoConfirmacion(
-      'Completar Inscripción',
-      '¿Marcar esta inscripción como completada?',
-    );
-
+        'Completar Inscripción', '¿Marcar esta inscripción como completada?');
     if (confirmado) {
       final cubit = context.read<InscripcionCubit>();
       try {
@@ -421,9 +413,5 @@ class _InscripcionesScreenState extends State<InscripcionesScreen> {
       ),
     );
     return result ?? false;
-  }
-
-  void _mostrarMensaje(String mensaje, {bool esError = false}) {
-    AppSnackBar.show(context, mensaje, error: esError);
   }
 }

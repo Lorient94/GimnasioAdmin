@@ -1,30 +1,24 @@
-// cubits/inscripcion/inscripcion_state.dart
 part of 'inscripcion_cubit.dart';
 
 abstract class InscripcionState extends Equatable {
-  final List<dynamic> inscripciones;
-
-  const InscripcionState({this.inscripciones = const []});
+  const InscripcionState();
 
   @override
-  List<Object> get props => [inscripciones];
+  List<Object> get props => [];
 }
 
-class InscripcionInitial extends InscripcionState {
-  const InscripcionInitial() : super(inscripciones: const []);
-}
+class InscripcionInitial extends InscripcionState {}
 
-class InscripcionLoading extends InscripcionState {
-  const InscripcionLoading() : super(inscripciones: const []);
-}
+class InscripcionLoading extends InscripcionState {}
 
 class InscripcionLoaded extends InscripcionState {
+  final List<dynamic> inscripciones;
   final List<dynamic> inscripcionesFiltradas;
 
   const InscripcionLoaded({
-    required List<dynamic> inscripciones,
+    required this.inscripciones,
     required this.inscripcionesFiltradas,
-  }) : super(inscripciones: inscripciones);
+  });
 
   InscripcionLoaded copyWith({
     List<dynamic>? inscripciones,
@@ -41,14 +35,24 @@ class InscripcionLoaded extends InscripcionState {
   List<Object> get props => [inscripciones, inscripcionesFiltradas];
 }
 
+class InscripcionAlertasLoaded extends InscripcionState {
+  final List<Map<String, dynamic>> alertas;
+
+  const InscripcionAlertasLoaded({required this.alertas});
+
+  @override
+  List<Object> get props => [alertas];
+}
+
 class InscripcionError extends InscripcionState {
   final String error;
+  final List<dynamic> inscripciones;
 
   const InscripcionError({
     required this.error,
-    List<dynamic> inscripciones = const [],
-  }) : super(inscripciones: inscripciones);
+    this.inscripciones = const [],
+  });
 
   @override
-  List<Object> get props => [error, ...super.props];
+  List<Object> get props => [error, ...inscripciones];
 }

@@ -27,82 +27,114 @@ class _PagoScreenState extends State<PagoScreen> {
     super.dispose();
   }
 
+  /// Muestra el modal para crear un nuevo pago
   void _mostrarCrearPago() {
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        child: CrearPagoWidget(onPreferenciaCreada: (initPoint) async {
-          // Si recibimos URL de preferencia, intentamos abrirla
-          if (initPoint != null && initPoint.isNotEmpty) {
-            final uri = Uri.parse(initPoint);
-            if (await canLaunchUrl(uri)) {
-              await launchUrl(uri, mode: LaunchMode.externalApplication);
-            } else {
-              showDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: CrearPagoWidget(
+            onPreferenciaCreada: (initPoint) async {
+              if (initPoint == null || initPoint.isEmpty) return;
+              final uri = Uri.parse(initPoint);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              } else {
+                if (!context.mounted) return;
+                showDialog(
                   context: context,
                   builder: (_) => AlertDialog(
-                        title: const Text('Abrir URL'),
-                        content: Text('Abre la siguiente URL:\n$initPoint'),
-                        actions: [
-                          TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              child: const Text('Cerrar'))
-                        ],
-                      ));
-            }
-          }
-        }),
+                    title: const Text('Abrir pago manualmente'),
+                    content: Text(
+                      'No se pudo abrir la URL automáticamente.\n\n$initPoint',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cerrar'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+            },
+          ),
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<MercadoPagoCubit>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pagos'),
         actions: [
           IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () =>
-                  context.read<MercadoPagoCubit>().cargarHistorial()),
-          IconButton(icon: const Icon(Icons.add), onPressed: _mostrarCrearPago),
+            icon: const Icon(Icons.refresh),
+            onPressed: () => cubit.cargarHistorial(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: _mostrarCrearPago,
+          ),
         ],
       ),
       body: Column(
         children: [
+          // 🔍 Buscador
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: TextField(
               controller: _searchController,
               decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.search),
-                  hintText: 'Buscar por estado o cliente...'),
-              onChanged: (v) {},
+                prefixIcon: Icon(Icons.search),
+                hintText: 'Buscar por estado, cliente o concepto...',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (valor) => cubit.filtrarPagos(valor),
             ),
           ),
+
+          // 📋 Lista de pagos
           Expanded(
             child: BlocBuilder<MercadoPagoCubit, MercadoPagoState>(
               builder: (context, state) {
-                if (state is MercadoPagoLoading)
+                if (state is MercadoPagoLoading) {
                   return const Center(child: CircularProgressIndicator());
-                if (state is MercadoPagoError)
-                  return Center(child: Text('Error: ${state.message}'));
-                if (state is MercadoPagoLoaded) {
-                  final list = state.pagosFiltrados;
-                  if (list.isEmpty)
-                    return const Center(child: Text('No hay pagos'));
+                }
 
-                  return ListView.builder(
-                    itemCount: list.length,
-                    itemBuilder: (context, index) {
-                      final pago = list[index];
-                      return PagoCardWidget(pago: pago);
-                    },
+                if (state is MercadoPagoError) {
+                  return Center(
+                    child: Text('Error: ${state.message}'),
                   );
                 }
 
-                return const Center(child: Text('Sin datos'));
+                if (state is MercadoPagoLoaded) {
+                  final pagos = state.pagosFiltrados;
+                  if (pagos.isEmpty) {
+                    return const Center(
+                      child: Text('No hay pagos registrados.'),
+                    );
+                  }
+
+                  return RefreshIndicator(
+                    onRefresh: () async => cubit.cargarHistorial(),
+                    child: ListView.builder(
+                      itemCount: pagos.length,
+                      itemBuilder: (context, index) {
+                        final pago = pagos[index];
+                        return PagoCardWidget(pago: pago);
+                      },
+                    ),
+                  );
+                }
+
+                return const Center(child: Text('Cargando datos...'));
               },
             ),
           ),

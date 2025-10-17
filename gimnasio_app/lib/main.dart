@@ -42,11 +42,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Configuración de Dio
     final dio = Dio();
     final baseUrl = 'http://127.0.0.1:8000';
 
-    // Inicializar repositorios
     final claseRepository = ClaseRepository(dio: dio, baseUrl: baseUrl);
     final inscripcionRepository =
         InscripcionRepository(dio: dio, baseUrl: baseUrl);
@@ -61,32 +59,19 @@ class MyApp extends StatelessWidget {
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider<ClaseCubit>(
-          create: (context) => ClaseCubit(repository: claseRepository),
-        ),
-        BlocProvider<InscripcionCubit>(
-          create: (context) =>
-              InscripcionCubit(repository: inscripcionRepository),
-        ),
-        BlocProvider<ContenidoCubit>(
-          create: (context) => ContenidoCubit(repository: contenidoRepository)
-            ..cargarContenidos(),
-        ),
-        BlocProvider<InformacionCubit>(
-          create: (context) =>
-              InformacionCubit(repository: informacionRepository),
-        ),
-        BlocProvider<MercadoPagoCubit>(
-          create: (context) =>
-              MercadoPagoCubit(repository: mercadoPagoRepository),
-        ),
-        BlocProvider<UsuarioCubit>(
-          create: (context) => UsuarioCubit(repository: usuarioRepository),
-        ),
-        BlocProvider<TransaccionCubit>(
-          create: (context) =>
-              TransaccionCubit(repository: transaccionRepository),
-        ),
+        BlocProvider(create: (_) => ClaseCubit(repository: claseRepository)),
+        BlocProvider(
+            create: (_) => InscripcionCubit(repository: inscripcionRepository)),
+        BlocProvider(
+            create: (_) => ContenidoCubit(repository: contenidoRepository)
+              ..cargarContenidos()),
+        BlocProvider(
+            create: (_) => InformacionCubit(repository: informacionRepository)),
+        BlocProvider(create: (_) => MercadoPagoCubit(mercadoPagoRepository)),
+        BlocProvider(
+            create: (_) => UsuarioCubit(repository: usuarioRepository)),
+        BlocProvider(
+            create: (_) => TransaccionCubit(repository: transaccionRepository)),
       ],
       child: MaterialApp(
         title: 'Gimnasio ABC - Sistema de Gestión',
@@ -195,7 +180,21 @@ class HomeScreen extends StatelessWidget {
                 _buildSectionTitle(),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: _buildOptionsGrid(context),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Opacity(
+                          opacity: 0.25,
+                          child: Image.asset(
+                            'assets/images/fondo_gimnasio.png',
+                            fit: BoxFit.cover,
+                            alignment: Alignment.center,
+                          ),
+                        ),
+                      ),
+                      _buildOptionsGrid(context),
+                    ],
+                  ),
                 ),
                 _buildFooter(),
               ],
@@ -259,14 +258,14 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildSectionTitle() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 8.0),
       child: Text(
         'Módulos del Sistema',
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: const Color.fromARGB(255, 255, 253, 253),
+          color: Color.fromARGB(255, 255, 253, 253),
         ),
       ),
     );
@@ -301,7 +300,6 @@ class HomeScreen extends StatelessWidget {
 
     return Column(
       children: [
-        // Primera fila - 3 botones
         Expanded(
           child: Row(
             children: [
@@ -314,7 +312,6 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        // Segunda fila - 3 botones
         Expanded(
           child: Row(
             children: [
@@ -327,13 +324,15 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        // Tercera fila - 1 botón centrado
+        // tercera fila: Transacciones con mismo ancho que los otros botones
         Expanded(
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Spacer(),
-              _buildSquareButton(options[6]),
-              const Spacer(flex: 2), // Doble espacio para centrar
+              SizedBox(
+                width: MediaQuery.of(context).size.width / 3 - 16,
+                child: _buildSquareButton(options[6], useExpanded: false),
+              ),
             ],
           ),
         ),
@@ -341,47 +340,46 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSquareButton(_MenuOption option) {
-    return Expanded(
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: option.onTap,
-          child: Container(
-            // El contenedor será cuadrado automáticamente por el Expanded
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: option.color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(option.icon, size: 24, color: option.color),
+  Widget _buildSquareButton(_MenuOption option, {bool useExpanded = true}) {
+    final button = Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: option.onTap,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: option.color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  option.text,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color.fromARGB(255, 255, 253, 253),
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                child: Icon(option.icon, size: 24, color: option.color),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                option.text,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Color.fromARGB(255, 255, 253, 253),
                 ),
-              ],
-            ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),
     );
+
+    return useExpanded ? Expanded(child: button) : button;
   }
 
   Widget _buildFooter() {
@@ -399,10 +397,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _navigateToScreen(BuildContext context, Widget screen) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => screen),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
   }
 }
 

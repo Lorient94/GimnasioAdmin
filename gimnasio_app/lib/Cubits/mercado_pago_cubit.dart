@@ -1,101 +1,116 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:equatable/equatable.dart';
 import 'package:gimnasio_app/repositorio_api/mercado_pago_repositorio.dart';
 
 part 'mercado_pago_state.dart';
 
 class MercadoPagoCubit extends Cubit<MercadoPagoState> {
-  final MercadoPagoRepository _repository;
+  final MercadoPagoRepository _repo;
+  List<Map<String, dynamic>> _todosLosPagos = [];
 
-  MercadoPagoCubit({required MercadoPagoRepository repository})
-      : _repository = repository,
-        super(MercadoPagoInitial());
+  MercadoPagoCubit(this._repo) : super(const MercadoPagoInitial());
 
-  Future<void> cargarHistorial({
-    String? estado,
-    String? clienteDni,
-    String? fechaInicio,
-    String? fechaFin,
-  }) async {
+  /// Cargar historial completo de pagos
+  Future<void> cargarHistorial() async {
     try {
-      emit(MercadoPagoLoading());
-      final lista = await _repository.obtenerHistorialPagos(
-        estado: estado,
-        clienteDni: clienteDni,
-        fechaInicio: fechaInicio,
-        fechaFin: fechaFin,
-      );
-      final pagos = List<Map<String, dynamic>>.from(lista);
-      emit(MercadoPagoLoaded(pagos: pagos, pagosFiltrados: pagos));
+      emit(const MercadoPagoLoading());
+      final pagos = await _repo.obtenerHistorialPagos();
+      _todosLosPagos = List<Map<String, dynamic>>.from(pagos);
+      emit(MercadoPagoLoaded(
+          pagos: _todosLosPagos, pagosFiltrados: _todosLosPagos));
     } catch (e) {
-      emit(MercadoPagoError(message: e.toString()));
+      emit(MercadoPagoError('Error al cargar pagos: $e'));
     }
   }
 
-  Future<void> crearPago(Map<String, dynamic> datos) async {
+  /// Crear un pago y actualizar la lista
+  Future<String?> crearPago(Map<String, dynamic> pagoData) async {
     try {
-      emit(MercadoPagoLoading());
-      final pago = await _repository.crearPago(datos);
-      if (state is MercadoPagoLoaded) {
-        final current = state as MercadoPagoLoaded;
-        final nuevos = [...current.pagos, Map<String, dynamic>.from(pago)];
-        emit(current.copyWith(pagos: nuevos, pagosFiltrados: nuevos));
-      } else {
-        await cargarHistorial();
-      }
-    } catch (e) {
-      emit(MercadoPagoError(message: e.toString()));
-    }
-  }
-
-  /// Crea una preferencia de pago (usualmente retorna init_point / preference)
-  Future<Map<String, dynamic>> crearPreferencia(
-      Map<String, dynamic> datos) async {
-    try {
-      final res = await _repository.crearPreferenciaPago(datos);
-      return res;
-    } catch (e) {
-      throw Exception('Error creando preferencia: ${e.toString()}');
-    }
-  }
-
-  Future<Map<String, dynamic>> actualizarPago(
-      int pagoId, Map<String, dynamic> datos) async {
-    try {
-      emit(MercadoPagoLoading());
-      final res = await _repository.actualizarPago(pagoId, datos);
+      emit(const MercadoPagoLoading());
+      final result = await _repo.crearPago(pagoData);
       await cargarHistorial();
-      return res;
+      return result['sandbox_init_point'] ?? result['init_point'];
     } catch (e) {
-      emit(MercadoPagoError(message: e.toString()));
-      throw Exception(e.toString());
+      emit(MercadoPagoError('Error al crear pago: $e'));
+      return null;
     }
   }
 
+  /// Crear una preferencia de pago
+  Future<Map<String, dynamic>> crearPreferencia(
+      Map<String, dynamic> data) async {
+    try {
+      emit(const MercadoPagoLoading());
+      final result = await _repo.crearPreferenciaPago(data);
+      await cargarHistorial();
+      return result;
+    } catch (e) {
+      emit(MercadoPagoError('Error al crear preferencia: $e'));
+      rethrow;
+    }
+  }
+
+  /// Actualizar un pago existente
+  Future<void> actualizarPago(int pagoId, Map<String, dynamic> datos) async {
+    try {
+      emit(const MercadoPagoLoading());
+      await _repo.actualizarPago(pagoId, datos);
+      await cargarHistorial();
+    } catch (e) {
+      emit(MercadoPagoError('Error al actualizar pago: $e'));
+      rethrow;
+    }
+  }
+
+  /// Verificar el estado de un pago
   Future<Map<String, dynamic>> verificarPago(int pagoId) async {
     try {
-      final res = await _repository.verificarPago(pagoId);
-      return res;
+      return await _repo.verificarPago(pagoId);
     } catch (e) {
-      throw Exception(e.toString());
+      emit(MercadoPagoError('Error al verificar pago: $e'));
+      rethrow;
     }
   }
 
-  Future<void> reembolsarPago(int pagoId, {double? monto}) async {
-    try {
-      emit(MercadoPagoLoading());
-      await _repository.reembolsarPago(pagoId: pagoId, monto: monto);
-      await cargarHistorial();
-    } catch (e) {
-      emit(MercadoPagoError(message: e.toString()));
-    }
-  }
-
+  /// Obtener detalle de un pago
   Future<Map<String, dynamic>> obtenerDetalle(int pagoId) async {
     try {
-      final detalle = await _repository.obtenerDetallePago(pagoId);
-      return detalle;
+      return await _repo.obtenerDetallePago(pagoId);
     } catch (e) {
-      throw Exception(e.toString());
+      emit(MercadoPagoError('Error al obtener detalle: $e'));
+      rethrow;
     }
+  }
+
+  /// Reembolsar un pago
+  Future<void> reembolsarPago(int pagoId) async {
+    try {
+      await _repo.reembolsarPago(pagoId: pagoId);
+      await cargarHistorial();
+    } catch (e) {
+      emit(MercadoPagoError('Error al reembolsar pago: $e'));
+    }
+  }
+
+  /// 🔍 Filtrar pagos por cliente, estado o concepto
+  void filtrarPagos(String query) {
+    if (state is! MercadoPagoLoaded) return;
+
+    final actual = state as MercadoPagoLoaded;
+
+    if (query.isEmpty) {
+      emit(actual.copyWith(pagosFiltrados: _todosLosPagos));
+      return;
+    }
+
+    final q = query.toLowerCase();
+    final filtrados = _todosLosPagos.where((pago) {
+      final cliente = (pago['cliente_nombre'] ?? '').toString().toLowerCase();
+      final estado = (pago['estado_pago'] ?? '').toString().toLowerCase();
+      final concepto = (pago['concepto'] ?? '').toString().toLowerCase();
+      return cliente.contains(q) || estado.contains(q) || concepto.contains(q);
+    }).toList();
+
+    emit(actual.copyWith(pagosFiltrados: filtrados));
   }
 }

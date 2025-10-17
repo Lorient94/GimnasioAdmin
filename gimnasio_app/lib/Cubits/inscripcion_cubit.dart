@@ -1,4 +1,3 @@
-// cubits/inscripcion/inscripcion_cubit.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:gimnasio_app/repositorio_api/inscripcion_repositorio.dart';
@@ -42,7 +41,6 @@ class InscripcionCubit extends Cubit<InscripcionState> {
   void filtrarInscripciones(String query) {
     if (state is InscripcionLoaded) {
       final currentState = state as InscripcionLoaded;
-
       if (query.isEmpty) {
         emit(currentState.copyWith(
             inscripcionesFiltradas: currentState.inscripciones));
@@ -56,7 +54,6 @@ class InscripcionCubit extends Cubit<InscripcionState> {
         final claseNombre =
             inscripcion['clase_nombre']?.toString().toLowerCase() ?? '';
         final estado = inscripcion['estado']?.toString().toLowerCase() ?? '';
-
         return nombreCliente.contains(query.toLowerCase()) ||
             claseNombre.contains(query.toLowerCase()) ||
             estado.contains(query.toLowerCase());
@@ -70,10 +67,8 @@ class InscripcionCubit extends Cubit<InscripcionState> {
   // ==================== GESTIÓN DE INSCRIPCIONES ====================
   Future<void> crearInscripcion(Map<String, dynamic> datosInscripcion) async {
     if (state is! InscripcionLoaded) return;
-
     final currentState = state as InscripcionLoaded;
     emit(InscripcionLoading());
-
     try {
       final nuevaInscripcion =
           await _repository.crearInscripcion(datosInscripcion);
@@ -81,24 +76,20 @@ class InscripcionCubit extends Cubit<InscripcionState> {
         ...currentState.inscripciones,
         nuevaInscripcion
       ];
-
       emit(InscripcionLoaded(
         inscripciones: nuevasInscripciones,
         inscripcionesFiltradas: nuevasInscripciones,
       ));
     } catch (e) {
       emit(InscripcionError(error: e.toString()));
-      // Recargar para mantener consistencia
       await cargarInscripciones();
     }
   }
 
   Future<void> cancelarInscripcion(int inscripcionId, String motivo) async {
     if (state is! InscripcionLoaded) return;
-
     try {
       await _repository.cancelarInscripcion(inscripcionId, motivo);
-      // Recargar para obtener los datos actualizados
       await cargarInscripciones();
     } catch (e) {
       emit(InscripcionError(error: e.toString()));
@@ -108,7 +99,6 @@ class InscripcionCubit extends Cubit<InscripcionState> {
 
   Future<void> reactivarInscripcion(int inscripcionId) async {
     if (state is! InscripcionLoaded) return;
-
     try {
       await _repository.reactivarInscripcion(inscripcionId);
       await cargarInscripciones();
@@ -120,7 +110,6 @@ class InscripcionCubit extends Cubit<InscripcionState> {
 
   Future<void> completarInscripcion(int inscripcionId) async {
     if (state is! InscripcionLoaded) return;
-
     try {
       await _repository.completarInscripcion(inscripcionId);
       await cargarInscripciones();
@@ -147,11 +136,14 @@ class InscripcionCubit extends Cubit<InscripcionState> {
     }
   }
 
-  Future<List<dynamic>> obtenerAlertasCuposCriticos() async {
+  // ==================== ALERTAS DE CUPOS CRÍTICOS ====================
+  Future<void> cargarAlertasCuposCriticos({int porcentaje = 80}) async {
     try {
-      return await _repository.obtenerAlertasCuposCriticos();
+      final alertas = await _repository.obtenerAlertasCuposCriticos(porcentaje);
+      emit(InscripcionAlertasLoaded(alertas: alertas));
     } catch (e) {
-      throw Exception(e.toString());
+      emit(InscripcionError(
+          error: 'Error al obtener alertas de cupos críticos: $e'));
     }
   }
 

@@ -104,13 +104,20 @@ try:
 except Exception as e:
     print(f"❌ Error cargando router de contenidos: {e}")
 
-# ✅ Router de Mercado Pago (corregido el nombre)
 try:
-    from routers.mercado_pago_router import mercado_pago_router  # ✅ Cambiado de admin_mercadopago_router a mercado_pago_router
+    from routers.admin.mercado_pago_router import mercado_pago_router  # ✅ Cambiado de admin_mercadopago_router a mercado_pago_router
     app.include_router(mercado_pago_router)
     print("✅ Router de Mercado Pago cargado")
 except Exception as e:
     print(f"❌ Error cargando router de Mercado Pago: {e}")
+
+try:
+    from routers.admin.admin_pago_router import admin_pago_router
+    app.include_router(admin_pago_router)
+    print("✅ Router administrativo de pagos cargado")
+except Exception as e:
+    print(f"❌ Error cargando router administrativo de pagos: {e}")
+
 
 try:
     from routers.admin.admin_transaccion_router import admin_transaccion_router
