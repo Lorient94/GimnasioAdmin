@@ -1,17 +1,18 @@
+// widgets/crear_pago_widget.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gimnasio_app/Cubits/mercado_pago_cubit.dart';
-import 'package:gimnasio_app/repositorio_api/usuario_repositorio.dart';
-import 'package:dio/dio.dart';
 
 class CrearPagoWidget extends StatefulWidget {
-  final void Function(String? initPoint) onPreferenciaCreada;
-  final Map<String, dynamic>? pagoInicial; // <-- nuevo parámetro opcional
+  final Function(String?)? onPreferenciaCreada;
+  final String? clienteDni;
+  final String? clienteNombre;
 
   const CrearPagoWidget({
     super.key,
-    required this.onPreferenciaCreada,
-    this.pagoInicial,
+    this.onPreferenciaCreada,
+    this.clienteDni,
+    this.clienteNombre,
   });
 
   @override
@@ -20,168 +21,240 @@ class CrearPagoWidget extends StatefulWidget {
 
 class _CrearPagoWidgetState extends State<CrearPagoWidget> {
   final _formKey = GlobalKey<FormState>();
-  String? _clienteDni;
-  double? _monto;
-  String? _concepto;
+  final _montoController = TextEditingController();
+  final _conceptoController = TextEditingController();
+  final _clienteDniController = TextEditingController();
+  final _clienteNombreController = TextEditingController();
+  final _clienteEmailController = TextEditingController();
 
-  List<Map<String, dynamic>> _clientes = [];
-  bool _loadingClientes = true;
-  bool _enviando = false;
+  bool _creando = false;
 
   @override
   void initState() {
     super.initState();
-    _cargarClientes();
-
-    // Si viene pagoInicial, prellenar campos
-    if (widget.pagoInicial != null) {
-      final pago = widget.pagoInicial!;
-      _clienteDni = pago['cliente_dni']?.toString();
-      _monto = pago['monto'] != null
-          ? double.tryParse(pago['monto'].toString())
-          : null;
-      _concepto = pago['concepto']?.toString();
+    // Pre-cargar datos si se proporcionan
+    if (widget.clienteDni != null) {
+      _clienteDniController.text = widget.clienteDni!;
     }
-  }
-
-  Future<void> _cargarClientes() async {
-    try {
-      final repo = UsuarioRepository(
-        dio: Dio(),
-        baseUrl: const String.fromEnvironment('BACKEND_URL',
-            defaultValue: 'http://localhost:8000'),
-      );
-
-      final clientes = await repo.obtenerTodosLosUsuarios();
-      setState(() {
-        _clientes = List<Map<String, dynamic>>.from(clientes);
-        _loadingClientes = false;
-      });
-    } catch (e) {
-      setState(() => _loadingClientes = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al cargar clientes: $e')),
-      );
-    }
-  }
-
-  Future<void> _crearPago() async {
-    if (!_formKey.currentState!.validate()) return;
-    _formKey.currentState!.save();
-
-    setState(() => _enviando = true);
-
-    try {
-      final cubit = context.read<MercadoPagoCubit>();
-      final result = await cubit.crearPreferencia({
-        "id_usuario": _clienteDni,
-        "monto": _monto,
-        "concepto": _concepto,
-        "metodo_pago": "mercado_pago",
-      });
-
-      widget.onPreferenciaCreada(
-          result['sandbox_init_point'] ?? result['init_point']);
-      Navigator.pop(context);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al crear pago: $e')),
-      );
-    } finally {
-      setState(() => _enviando = false);
+    if (widget.clienteNombre != null) {
+      _clienteNombreController.text = widget.clienteNombre!;
     }
   }
 
   @override
+  void dispose() {
+    _montoController.dispose();
+    _conceptoController.dispose();
+    _clienteDniController.dispose();
+    _clienteNombreController.dispose();
+    _clienteEmailController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 500),
       child: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              widget.pagoInicial != null
-                  ? "Editar pago #${widget.pagoInicial!['id']}"
-                  : "Crear nuevo pago",
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            const Text(
+              'Crear Nuevo Pago',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 16),
 
-            // Dropdown de clientes
-            if (_loadingClientes)
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: CircularProgressIndicator(),
-              )
-            else
-              DropdownButtonFormField<String>(
-                value: _clienteDni,
-                decoration: const InputDecoration(labelText: "Cliente"),
-                items: _clientes.map((cliente) {
-                  final nombre = cliente['nombre'] ?? '';
-                  final apellido = cliente['apellido'] ?? '';
-                  final dni = cliente['dni'] ?? '';
-                  return DropdownMenuItem(
-                    value: dni.toString(),
-                    child: Text("$nombre $apellido ($dni)"),
-                  );
-                }).toList(),
-                onChanged: (v) => _clienteDni = v,
-                validator: (v) => v == null ? "Selecciona un cliente" : null,
+            // DNI del cliente
+            TextFormField(
+              controller: _clienteDniController,
+              decoration: const InputDecoration(
+                labelText: 'DNI del Cliente',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.person),
               ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Por favor ingresa el DNI';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
 
+            // Nombre del cliente
+            TextFormField(
+              controller: _clienteNombreController,
+              decoration: const InputDecoration(
+                labelText: 'Nombre del Cliente',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.person_outline),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Por favor ingresa el nombre';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // Email del cliente
+            TextFormField(
+              controller: _clienteEmailController,
+              decoration: const InputDecoration(
+                labelText: 'Email del Cliente',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.email),
+              ),
+              keyboardType: TextInputType.emailAddress,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Por favor ingresa el email';
+                }
+                if (!value.contains('@')) {
+                  return 'Por favor ingresa un email válido';
+                }
+                return null;
+              },
+            ),
             const SizedBox(height: 12),
 
             // Monto
             TextFormField(
-              initialValue: _monto?.toString(),
-              decoration: const InputDecoration(labelText: "Monto (ARS)"),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              validator: (v) =>
-                  v == null || v.isEmpty ? "Campo requerido" : null,
-              onSaved: (v) => _monto = double.tryParse(v ?? "0"),
+              controller: _montoController,
+              decoration: const InputDecoration(
+                labelText: 'Monto',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.attach_money),
+              ),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Por favor ingresa el monto';
+                }
+                final monto = double.tryParse(value);
+                if (monto == null || monto <= 0) {
+                  return 'Por favor ingresa un monto válido';
+                }
+                return null;
+              },
             ),
-
             const SizedBox(height: 12),
 
             // Concepto
             TextFormField(
-              initialValue: _concepto,
-              decoration: const InputDecoration(labelText: "Concepto"),
-              validator: (v) =>
-                  v == null || v.isEmpty ? "Campo requerido" : null,
-              onSaved: (v) => _concepto = v,
-            ),
-
-            const SizedBox(height: 24),
-
-            // Botón de crear/editar
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _enviando ? null : _crearPago,
-                icon: _enviando
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.payment),
-                label: Text(_enviando
-                    ? "Procesando..."
-                    : (widget.pagoInicial != null
-                        ? "Actualizar pago"
-                        : "Crear y Pagar")),
+              controller: _conceptoController,
+              decoration: const InputDecoration(
+                labelText: 'Concepto',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.description),
               ),
+              maxLines: 2,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Por favor ingresa el concepto';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+
+            // Botones de acción
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _creando ? null : () => Navigator.pop(context),
+                    child: const Text('Cancelar'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _creando ? null : _crearPago,
+                    child: _creando
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Crear Pago'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _crearPago() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _creando = true;
+    });
+
+    try {
+      final cubit = context.read<MercadoPagoCubit>();
+
+      final pagoData = {
+        "cliente_dni": _clienteDniController.text,
+        "monto": double.parse(_montoController.text),
+        "concepto": _conceptoController.text,
+        "cliente_nombre": _clienteNombreController.text,
+        "cliente_email": _clienteEmailController.text,
+      };
+
+      final resultado = await cubit.crearPagoPrueba(pagoData);
+
+      if (mounted) {
+        setState(() {
+          _creando = false;
+        });
+
+        if (resultado['success'] == true) {
+          final initPoint = resultado['init_point'];
+          widget.onPreferenciaCreada?.call(initPoint);
+
+          // Mostrar éxito
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(resultado['message'] ?? 'Pago creado exitosamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          Navigator.pop(context);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(resultado['error'] ?? 'Error al crear pago'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _creando = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

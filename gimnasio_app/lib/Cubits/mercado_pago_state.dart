@@ -1,10 +1,12 @@
+// Cubits/mercado_pago_state.dart
 part of 'mercado_pago_cubit.dart';
 
+@immutable
 abstract class MercadoPagoState extends Equatable {
   const MercadoPagoState();
 
   @override
-  List<Object?> get props => [];
+  List<Object> get props => [];
 }
 
 class MercadoPagoInitial extends MercadoPagoState {
@@ -35,13 +37,14 @@ class MercadoPagoLoaded extends MercadoPagoState {
   }
 
   @override
-  List<Object?> get props => [pagos, pagosFiltrados];
+  List<Object> get props => [pagos, pagosFiltrados];
 }
 
 class MercadoPagoError extends MercadoPagoState {
   final String message;
+
   const MercadoPagoError(this.message);
 
   @override
-  List<Object?> get props => [message];
+  List<Object> get props => [message];
 }

@@ -19,8 +19,9 @@ class ProcesarPagoMercadoPagoCase:
     def ejecutar(self, pago_data: Dict[str, Any]) -> Dict[str, Any]:
         """Ejecutar el proceso completo de pago con Mercado Pago"""
         
-        # Validar datos requeridos
-        required_fields = ["cliente_dni", "monto", "concepto"]
+        # ❌ PROBLEMA: Se espera 'cliente_dni' pero el frontend envía 'id_usuario'
+        # ✅ SOLUCIÓN: Adaptar los nombres
+        required_fields = ["id_usuario", "monto", "concepto"]  # ✅ Cambiado de 'cliente_dni' a 'id_usuario'
         for field in required_fields:
             if field not in pago_data:
                 return {"error": f"Campo requerido faltante: {field}"}
@@ -28,7 +29,7 @@ class ProcesarPagoMercadoPagoCase:
         try:
             # 1. Crear transacción
             transaccion = Transaccion(
-                cliente_dni=pago_data["cliente_dni"],
+                cliente_dni=pago_data["id_usuario"],  # ✅ Usar id_usuario como cliente_dni
                 monto=float(pago_data["monto"]),
                 metodo_pago=MetodoPago.MERCADO_PAGO,
                 concepto=pago_data["concepto"],
@@ -39,11 +40,11 @@ class ProcesarPagoMercadoPagoCase:
             
             # 2. Crear pago asociado a la transacción
             pago_db = Pago(
-                id_usuario=pago_data["cliente_dni"],
+                id_usuario=pago_data["id_usuario"],
                 transaccion_id=transaccion_creada.id,
                 monto=float(pago_data["monto"]),
                 concepto=pago_data["concepto"],
-                metodo_pago="Mercado Pago",
+                metodo_pago="mercado_pago",  # ✅ Cambiado de "Mercado Pago" a "mercado_pago"
                 estado_pago=EstadoPago.PENDIENTE,
                 referencia=f"PAGO-MP-{uuid.uuid4().hex[:8].upper()}"
             )
@@ -52,7 +53,7 @@ class ProcesarPagoMercadoPagoCase:
             
             # 3. Crear preferencia en Mercado Pago
             mp_data = {
-                "cliente_dni": pago_data["cliente_dni"],
+                "cliente_dni": pago_data["id_usuario"],
                 "monto": float(pago_data["monto"]),
                 "concepto": pago_data["concepto"],
                 "pago_id": pago_creado.id
@@ -68,7 +69,7 @@ class ProcesarPagoMercadoPagoCase:
             
             # 4. Actualizar pago con referencia de Mercado Pago
             self.repositorio_pagos.actualizar_pago(pago_creado.id, {
-                "referencia_mp": resultado_mp["referencia_interna"],
+                "referencia": resultado_mp["referencia_interna"],  # ✅ Usar 'referencia' en lugar de 'referencia_mp'
                 "preference_id": resultado_mp["preference_id"]
             })
             

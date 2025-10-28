@@ -4,40 +4,44 @@ from models.cliente import Cliente
 from sqlmodel import Session, select, func
 from typing import Optional, List
 
+from models.inscripcion import Inscripcion
+from models.pago import Pago
+from models.transaccion import Transaccion
+
 class AdaptadorClienteSQL(RepositorioCliente):
     def __init__(self, session: Session):
         self.session = session
 
     def crear_usuario(self, cliente: Cliente) -> Cliente:
-        print(f'🌱 Guardando usuario en DB: {cliente}')
+        print(f'Guardando usuario en DB: {cliente}')
 
         cliente.password = cliente.dni
         self.session.add(cliente)
         self.session.commit()
         self.session.refresh(cliente)
-        print(f'🌱 Usuario guardado en DB: {cliente}')
+        print(f'Usuario guardado en DB: {cliente}')
 
         return cliente
     
     def iniciar_sesion(self, correo: str, password: str) -> Optional[Cliente]:
-        print(f"🔐 Adaptador: Buscando usuario con correo: {correo}")
+        print(f"Adaptador: Buscando usuario con correo: {correo}")
         
         statement = select(Cliente).where(Cliente.correo == correo)
         resultado = self.session.exec(statement).first()
         
         if resultado:
-            print(f"🔐 Adaptador: Usuario encontrado: {resultado.nombre}")
-            print(f"🔐 Adaptador: Password en BD: {resultado.password}")
-            print(f"🔐 Adaptador: Password proporcionado: {password}")
-            print(f"🔐 Adaptador: Coinciden?: {resultado.password == password}")
+            print(f"Adaptador: Usuario encontrado: {resultado.nombre}")
+            print(f"Adaptador: Password en BD: {resultado.password}")
+            print(f"Adaptador: Password proporcionado: {password}")
+            print(f"Adaptador: Coinciden?: {resultado.password == password}")
             
             if resultado.password == password:
-                print("✅ Adaptador: Contraseña válida")
+                print("Adaptador: Contraseña válida")
                 return resultado
             else:
-                print("❌ Adaptador: Contraseña incorrecta")
+                print("Adaptador: Contraseña incorrecta")
         else:
-            print("❌ Adaptador: Usuario no encontrado")
+            print("Adaptador: Usuario no encontrado")
         
         return None
 
@@ -137,15 +141,41 @@ class AdaptadorClienteSQL(RepositorioCliente):
                 session.refresh(cliente)
             return cliente
     
-    def eliminar_usuario_permanentemente(self, cliente_id: int) -> bool:
-        """Eliminar usuario permanentemente"""
-        with self.session as session:
-            cliente = session.get(Cliente, cliente_id)
-            if cliente:
+def eliminar_usuario_permanentemente(self, cliente_id: int) -> bool:
+    """Eliminar usuario permanentemente"""
+    with self.session as session:
+        cliente = session.get(Cliente, cliente_id)
+        if cliente:
+            # ❌ PELIGROSO: Esto causará error por restricciones de FK
+            # session.delete(cliente)
+            # session.commit()
+            
+            # ✅ CORRECCIÓN: Primero eliminar dependencias o usar cascade
+            try:
+                # Opción 1: Eliminar transacciones e inscripciones primero
+                transacciones = session.exec(select(Transaccion).where(Transaccion.cliente_dni == cliente.dni)).all()
+                for transaccion in transacciones:
+                    # Eliminar pagos de la transacción
+                    pagos = session.exec(select(Pago).where(Pago.transaccion_id == transaccion.id)).all()
+                    for pago in pagos:
+                        session.delete(pago)
+                    session.delete(transaccion)
+                
+                # Eliminar inscripciones
+                inscripciones = session.exec(select(Inscripcion).where(Inscripcion.cliente_dni == cliente.dni)).all()
+                for inscripcion in inscripciones:
+                    session.delete(inscripcion)
+                
+                # Finalmente eliminar cliente
                 session.delete(cliente)
                 session.commit()
                 return True
-            return False
+                
+            except Exception as e:
+                session.rollback()
+                print(f"Error al eliminar cliente permanentemente: {e}")
+                return False
+        return False
     
     def obtener_estadisticas_clientes(self) -> dict:
         """Obtener estadísticas de clientes"""

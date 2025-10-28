@@ -110,7 +110,6 @@ class AdaptadorClaseSQL(RepositorioClase):
         
         return self.session.exec(query).first() is not None
 
-    # NUEVO MÉTODO: Obtener inscripciones activas para una clase
     def obtener_inscripciones_activas(self, clase_id: int) -> List:
         from models.inscripcion import Inscripcion, EstadoInscripcion
         statement = select(Inscripcion).where(
@@ -119,7 +118,6 @@ class AdaptadorClaseSQL(RepositorioClase):
         )
         return self.session.exec(statement).all()
 
-    # NUEVO MÉTODO: Obtener todas las clases (incluyendo inactivas) para admin
     def listar_todas_las_clases(self, instructor: Optional[str] = None) -> List[Clase]:
         query = select(Clase)
         
@@ -130,7 +128,6 @@ class AdaptadorClaseSQL(RepositorioClase):
         
         return self.session.exec(query).all()
 
-    # NUEVO MÉTODO: Estadísticas de una clase
     def obtener_estadisticas_clase(self, clase_id: int) -> Dict[str, Any]:
         from models.inscripcion import Inscripcion, EstadoInscripcion
         from sqlalchemy import func
@@ -139,10 +136,8 @@ class AdaptadorClaseSQL(RepositorioClase):
         if not clase:
             return {}
         
-        # Contar inscripciones activas
         inscripciones_activas = len(self.obtener_inscripciones_activas(clase_id))
         
-        # Contar total de inscripciones históricas
         statement_total = select(func.count(Inscripcion.id)).where(Inscripcion.clase_id == clase_id)
         total_inscripciones = self.session.exec(statement_total).first()
         

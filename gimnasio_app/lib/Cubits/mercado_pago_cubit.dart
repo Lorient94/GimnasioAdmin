@@ -1,6 +1,9 @@
+// Cubits/mercado_pago_cubit.dart - VERSIÓN CORREGIDA
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:gimnasio_app/repositorio_api/mercado_pago_repositorio.dart';
+import 'package:dio/dio.dart'; // ✅ CAMBIAR de http a dio
 
 part 'mercado_pago_state.dart';
 
@@ -112,5 +115,67 @@ class MercadoPagoCubit extends Cubit<MercadoPagoState> {
     }).toList();
 
     emit(actual.copyWith(pagosFiltrados: filtrados));
+  }
+
+  // ✅ MÉTODOS NUEVOS CORREGIDOS
+  Future<Map<String, dynamic>> crearPagoPrueba(
+      Map<String, dynamic> pagoData) async {
+    try {
+      emit(const MercadoPagoLoading());
+      final result = await _repo.crearPagoPrueba(pagoData);
+      await cargarHistorial();
+      return result;
+    } catch (e) {
+      emit(MercadoPagoError('Error al crear pago prueba: $e'));
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> simularPagoExitoso(String preferenceId) async {
+    try {
+      final result = await _repo.simularPagoExitoso(preferenceId);
+      await cargarHistorial();
+      return result;
+    } catch (e) {
+      emit(MercadoPagoError('Error al simular pago: $e'));
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> obtenerTarjetasPrueba() async {
+    try {
+      return await _repo.obtenerTarjetasPrueba();
+    } catch (e) {
+      emit(MercadoPagoError('Error obteniendo tarjetas: $e'));
+      rethrow;
+    }
+  }
+
+  /// Cargar transacciones con pagos
+  Future<void> cargarTransaccionesConPagos({String? clienteDni}) async {
+    try {
+      emit(const MercadoPagoLoading());
+      final transacciones =
+          await _repo.obtenerTransaccionesConPagos(clienteDni: clienteDni);
+      // Podrías crear un nuevo estado para transacciones o usar el existente
+      // Por ahora solo cargamos, en una implementación real crearías un estado específico
+      print('Transacciones cargadas: ${transacciones.length}');
+    } catch (e) {
+      emit(MercadoPagoError('Error al cargar transacciones: $e'));
+    }
+  }
+
+  /// Crear pago con transacción
+  Future<Map<String, dynamic>> crearPagoConTransaccion(
+      Map<String, dynamic> pagoData) async {
+    try {
+      emit(const MercadoPagoLoading());
+      final result = await _repo.crearPagoConTransaccion(pagoData);
+      await cargarHistorial(); // Recargar la lista de pagos
+      return result;
+    } catch (e) {
+      emit(MercadoPagoError('Error al crear pago con transacción: $e'));
+      rethrow;
+    }
   }
 }

@@ -86,15 +86,7 @@ class MyApp extends StatelessWidget {
           Locale('es', 'ES'),
           Locale('en', 'US'),
         ],
-        home: HomeScreen(
-          claseRepository: claseRepository,
-          inscripcionRepository: inscripcionRepository,
-          usuarioRepository: usuarioRepository,
-          contenidoRepository: contenidoRepository,
-          informacionRepository: informacionRepository,
-          mercadoPagoRepository: mercadoPagoRepository,
-          transaccionRepository: transaccionRepository,
-        ),
+        home: const HomeScreen(),
       ),
     );
   }
@@ -131,24 +123,7 @@ class MyApp extends StatelessWidget {
 }
 
 class HomeScreen extends StatelessWidget {
-  final ClaseRepository claseRepository;
-  final InscripcionRepository inscripcionRepository;
-  final UsuarioRepository usuarioRepository;
-  final ContenidoRepository contenidoRepository;
-  final InformacionRepository informacionRepository;
-  final MercadoPagoRepository mercadoPagoRepository;
-  final TransaccionRepository transaccionRepository;
-
-  const HomeScreen({
-    super.key,
-    required this.claseRepository,
-    required this.inscripcionRepository,
-    required this.usuarioRepository,
-    required this.contenidoRepository,
-    required this.informacionRepository,
-    required this.mercadoPagoRepository,
-    required this.transaccionRepository,
-  });
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -180,21 +155,7 @@ class HomeScreen extends StatelessWidget {
                 _buildSectionTitle(),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Opacity(
-                          opacity: 0.25,
-                          child: Image.asset(
-                            'assets/images/fondo_gimnasio.png',
-                            fit: BoxFit.cover,
-                            alignment: Alignment.center,
-                          ),
-                        ),
-                      ),
-                      _buildOptionsGrid(context),
-                    ],
-                  ),
+                  child: _buildOptionsGrid(context),
                 ),
                 _buildFooter(),
               ],
@@ -265,7 +226,7 @@ class HomeScreen extends StatelessWidget {
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Color.fromARGB(255, 255, 253, 253),
+          color: Color(0xFF1A73E8),
         ),
       ),
     );
@@ -273,102 +234,95 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildOptionsGrid(BuildContext context) {
     final options = [
-      _MenuOption('Usuario', Icons.person,
-          () => _navigateToScreen(context, UsuariosScreen()), Colors.blue),
-      _MenuOption('Clases', Icons.fitness_center,
-          () => _navigateToScreen(context, ClaseScreen()), Colors.green),
       _MenuOption(
-          'Inscripciones',
-          Icons.assignment,
-          () => _navigateToScreen(context, InscripcionesScreen()),
-          Colors.orange),
-      _MenuOption('Información', Icons.info,
-          () => _navigateToScreen(context, InformacionScreen()), Colors.purple),
+        'Usuarios',
+        Icons.people_alt,
+        () => _navigateToScreen(context, const UsuariosScreen()),
+        Colors.blue,
+      ),
       _MenuOption(
-          'Contenido',
-          Icons.video_library,
-          () => _navigateToScreen(context, const ContenidoScreen()),
-          Colors.red),
-      _MenuOption('Pagos', Icons.payment,
-          () => _navigateToScreen(context, PagoScreen()), Colors.teal),
+        'Clases',
+        Icons.fitness_center,
+        () => _navigateToScreen(context, ClaseScreen()),
+        Colors.green,
+      ),
       _MenuOption(
-          'Transacciones',
-          Icons.history,
-          () => _navigateToScreen(context, TransaccionesScreen()),
-          Colors.indigo),
+        'Inscripciones',
+        Icons.assignment,
+        () => _navigateToScreen(context, InscripcionesScreen()),
+        Colors.orange,
+      ),
+      _MenuOption(
+        'Información',
+        Icons.info,
+        () => _navigateToScreen(context, InformacionScreen()),
+        Colors.purple,
+      ),
+      _MenuOption(
+        'Contenido',
+        Icons.video_library,
+        () => _navigateToScreen(context, const ContenidoScreen()),
+        Colors.red,
+      ),
+      _MenuOption(
+        'Pagos',
+        Icons.payment,
+        () => _navigateToScreen(context, const PagoScreen()),
+        Colors.teal,
+      ),
+      _MenuOption(
+        'Transacciones',
+        Icons.receipt_long,
+        () => _navigateToScreen(context, TransaccionesScreen()),
+        Colors.indigo,
+      ),
     ];
 
-    return Column(
-      children: [
-        Expanded(
-          child: Row(
-            children: [
-              _buildSquareButton(options[0]),
-              const SizedBox(width: 8),
-              _buildSquareButton(options[1]),
-              const SizedBox(width: 8),
-              _buildSquareButton(options[2]),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Expanded(
-          child: Row(
-            children: [
-              _buildSquareButton(options[3]),
-              const SizedBox(width: 8),
-              _buildSquareButton(options[4]),
-              const SizedBox(width: 8),
-              _buildSquareButton(options[5]),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        // tercera fila: Transacciones con mismo ancho que los otros botones
-        Expanded(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: MediaQuery.of(context).size.width / 3 - 16,
-                child: _buildSquareButton(options[6], useExpanded: false),
-              ),
-            ],
-          ),
-        ),
-      ],
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 1.0, // Más compacto
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      itemCount: options.length,
+      itemBuilder: (context, index) {
+        return _buildCompactButton(options[index]);
+      },
     );
   }
 
-  Widget _buildSquareButton(_MenuOption option, {bool useExpanded = true}) {
-    final button = Card(
-      elevation: 2,
+  Widget _buildCompactButton(_MenuOption option) {
+    return Card(
+      elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: option.onTap,
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(12), // Padding reducido
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 40,
+                width: 40, // Icono más pequeño
                 height: 40,
                 decoration: BoxDecoration(
-                  color: option.color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: option.color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(option.icon, size: 24, color: option.color),
+                child: Icon(option.icon,
+                    size: 22, color: option.color), // Icono más pequeño
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 8), // Espacio reducido
               Text(
                 option.text,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 12, // Texto más pequeño
                   fontWeight: FontWeight.w600,
-                  color: Color.fromARGB(255, 255, 253, 253),
+                  color: Colors.black87,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -378,21 +332,17 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
     );
-
-    return useExpanded ? Expanded(child: button) : button;
   }
 
   Widget _buildFooter() {
-    return Column(
-      children: [
-        const SizedBox(height: 16),
-        Center(
-          child: Text(
-            '© 2025 Gimnasio ABC',
-            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-          ),
+    return const Padding(
+      padding: EdgeInsets.only(top: 8),
+      child: Center(
+        child: Text(
+          '© 2025 Gimnasio ABC',
+          style: TextStyle(fontSize: 11, color: Colors.grey),
         ),
-      ],
+      ),
     );
   }
 

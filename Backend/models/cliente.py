@@ -19,7 +19,6 @@ class Cliente(SQLModel, table=True):
 
     transacciones: List["Transaccion"] = Relationship(back_populates="cliente")
     inscripciones: List["Inscripcion"] = Relationship(back_populates="cliente")
-    pagos: List["Pago"] = Relationship(back_populates="cliente")  # 👈 esta línea faltaba
 
 # Modelos Pydantic para request/response
 class ClienteBase(BaseModel):

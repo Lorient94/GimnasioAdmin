@@ -7,6 +7,12 @@ from sqlalchemy import text
 import sys
 import os
 from dotenv import load_dotenv  # ✅ Nuevo import
+import logging
+
+# Configurar logging detallado
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
 
 # ✅ Cargar variables de entorno desde el archivo .env
 load_dotenv()
@@ -105,33 +111,26 @@ except Exception as e:
     print(f"❌ Error cargando router de contenidos: {e}")
 
 try:
+    print("🔄 Cargando router de Mercado Pago...")
     from routers.admin.mercado_pago_router import mercado_pago_router  # ✅ Cambiado de admin_mercadopago_router a mercado_pago_router
     app.include_router(mercado_pago_router)
-    print("✅ Router de Mercado Pago cargado")
+    print("✅ Router de Mercado Pago cargado EXITOSAMENTE")
+# Verificar endpoints cargados
+    print("📋 Endpoints cargados:")
+    for route in app.routes:
+        if hasattr(route, 'path') and 'mercado-pago' in str(route.path):
+            print(f"  {route.path}")
+            
 except Exception as e:
-    print(f"❌ Error cargando router de Mercado Pago: {e}")
-
-try:
-    from routers.admin.admin_pago_router import admin_pago_router
-    app.include_router(admin_pago_router)
-    print("✅ Router administrativo de pagos cargado")
-except Exception as e:
-    print(f"❌ Error cargando router administrativo de pagos: {e}")
-
-
+    print(f"❌ ERROR cargando router de Mercado Pago: {e}")
+    import traceback
+    traceback.print_exc()
 try:
     from routers.admin.admin_transaccion_router import admin_transaccion_router
     app.include_router(admin_transaccion_router)
     print("✅ Router de transacciones cargado")
 except Exception as e:
     print(f"❌ Error cargando router de transacciones: {e}")
-
-try:
-    from routers.admin.admin_pago_router import admin_pago_router  # ✅ Agregar router de pagos
-    app.include_router(admin_pago_router)
-    print("✅ Router administrativo de pagos cargado")
-except Exception as e:
-    print(f"❌ Error cargando router administrativo de pagos: {e}")
 
 # ✅ También agregar para servir archivos estáticos
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")    

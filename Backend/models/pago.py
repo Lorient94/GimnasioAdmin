@@ -7,7 +7,6 @@ from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from .transaccion import Transaccion
-    from .cliente import Cliente
 
 class EstadoPago(str, Enum):
     PENDIENTE = "pendiente"
@@ -28,11 +27,15 @@ class Pago(SQLModel, table=True):
     referencia: Optional[str] = Field(default=None, unique=True, index=True)
     metodo_pago: str  # Quitar Optional
     observaciones: Optional[str] = None
- 
+    preference_id: Optional[str] = Field(default=None, index=True)  # ✅ Nuevo campo
+    # ✅ NUEVO: Campos para soft delete
+    activo: bool = Field(default=True, index=True)
+    fecha_eliminacion: Optional[datetime] = None
+    motivo_eliminacion: Optional[str] = None
+    eliminado_por: Optional[str] = None  # Podría ser el DNI del admin que eliminó
 
     # Relaciones (usando string para evitar import circular)
     transaccion: Optional["Transaccion"] = Relationship(back_populates="pagos")
-    cliente: Optional["Cliente"] = Relationship(back_populates="pagos")
 
 # Modelos Pydantic para request/response
 class PagoBase(BaseModel):

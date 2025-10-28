@@ -172,17 +172,6 @@ class AdaptadorTransaccionSQL(RepositorioTransaccion):
                             if fecha_inicio <= t.fecha_creacion <= fecha_fin]
         
         return self._agrupar_por_metodo_pago(transacciones_periodo)
-
-
-    def ver_transacciones_ultimo_mes(self, cliente_dni: str) -> List[Transaccion]:
-        fecha_limite = datetime.utcnow() - timedelta(days=30)
-        
-        query = select(Transaccion).where(
-            Transaccion.cliente_dni == cliente_dni,
-            Transaccion.fecha >= fecha_limite
-        ).order_by(Transaccion.fecha.desc())
-        
-        return list(self.session.exec(query))
     
     def ver_historial_completo_cliente(self, cliente_dni: str, limite: int = 100):
         """Ver historial completo del cliente"""

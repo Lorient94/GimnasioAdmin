@@ -4,6 +4,7 @@ from sqlmodel import Session
 from Adaptadores.adaptadorPagoSQL import AdaptadorPagoSQL
 from servicios.mercado_pago import MercadoPagoService
 from models.pago import EstadoPago
+from datetime import datetime  # ✅ Agregar import faltante
 
 class VerificarEstadoPagoCase:
     def __init__(self, session: Session):
@@ -18,26 +19,25 @@ class VerificarEstadoPagoCase:
         if not pago:
             return {"error": "Pago no encontrado"}
         
-        if not pago.preference_id:
+        # ❌ PROBLEMA: Se usa preference_id pero no se almacena en el modelo
+        # ✅ SOLUCIÓN: Verificar si tenemos referencia MP
+        if not pago.referencia:
             return {"error": "Este pago no está asociado a Mercado Pago"}
         
         try:
-            # Buscar payment_id usando la referencia
-            # Nota: Necesitarías almacenar el payment_id cuando se complete el pago
-            # Por ahora, asumimos que la referencia MP está en referencia_mp
+            # ❌ PROBLEMA: No existe método verificar_pago_por_referencia
+            # ✅ SOLUCIÓN: Usar el preference_id almacenado o buscar por external_reference
             
-            if not pago.referencia_mp:
-                return {"error": "No hay referencia de Mercado Pago asociada"}
-            
-            # En un caso real, necesitarías buscar el payment_id por la referencia
-            # Esto es una simplificación - en producción necesitarías un método mejor
-            payment_info = self.mercado_pago_service.verificar_pago_por_referencia(pago.referencia_mp)
+            # Si tenemos preference_id, usarlo directamente
+            if hasattr(pago, 'preference_id') and pago.preference_id:
+                payment_info = self.mercado_pago_service.verificar_pago(pago.preference_id)
+            else:
+                # Buscar por external_reference (la referencia que guardamos)
+                # Esto requiere que el servicio de MP tenga este método
+                payment_info = {"error": "No se puede verificar sin preference_id"}
             
             if "error" in payment_info:
-                # Intentar con el preference_id como fallback
-                payment_info = self.mercado_pago_service.verificar_pago(pago.preference_id)
-                if "error" in payment_info:
-                    return payment_info
+                return payment_info
             
             # Mapear estado de Mercado Pago a nuestro sistema
             estado_mapeado = self._mapear_estado_mp(payment_info["status"])
@@ -55,7 +55,7 @@ class VerificarEstadoPagoCase:
                 # Si el pago se completó, actualizar fecha de aprobación
                 if estado_mapeado == EstadoPago.COMPLETADO:
                     self.repositorio_pagos.actualizar_pago(pago_id, {
-                        "fecha_aprobacion": datetime.now()
+                        "fecha_actualizacion": datetime.now()  # ✅ Usar fecha_actualizacion en lugar de fecha_aprobacion
                     })
             
             return {
