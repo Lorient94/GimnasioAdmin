@@ -1,4 +1,4 @@
-# routers/admin_transaccion_router.py
+# routers/admin_transaccion_router.py - VERSIÓN CORREGIDA
 from fastapi import APIRouter, HTTPException, status, Depends, Query
 from sqlmodel import Session, select
 from typing import List, Optional
@@ -9,7 +9,7 @@ from database import get_session
 from models.transaccion import (
     Transaccion, TransaccionCreate, TransaccionRead, TransaccionUpdate,
     TransaccionEstadoUpdate, TransaccionStatsResponse, MetodoPagoStats,
-    EstadoPago, MetodoPago
+    EstadoTransaccion, MetodoPago
 )
 from models.cliente import Cliente
 from Adaptadores.adaptadorTransaccionSQL import AdaptadorTransaccionSQL
@@ -27,7 +27,7 @@ def get_repositorio_transacciones(session: Session = Depends(get_session)) -> Re
 
 @admin_transaccion_router.get("/", response_model=List[TransaccionRead])
 def listar_todas_las_transacciones(
-    estado: Optional[EstadoPago] = Query(None),
+    estado: Optional[EstadoTransaccion] = Query(None),  
     cliente_dni: Optional[str] = Query(None),
     metodo_pago: Optional[MetodoPago] = Query(None),
     fecha_inicio: Optional[str] = Query(None, description="Fecha inicio (YYYY-MM-DD)"),
@@ -56,11 +56,11 @@ def listar_todas_las_transacciones(
         transacciones = [t for t in transacciones if t.metodo_pago == metodo_pago]
     
     if fecha_ini:
-        transacciones = [t for t in transacciones if t.fecha_creacion >= fecha_ini]
+        transacciones = [t for t in transacciones if t.fecha >= fecha_ini]  # ✅ CORREGIDO: fecha
     
     if fecha_fin_dt:
         fecha_fin_dt = fecha_fin_dt + timedelta(days=1)
-        transacciones = [t for t in transacciones if t.fecha_creacion < fecha_fin_dt]
+        transacciones = [t for t in transacciones if t.fecha < fecha_fin_dt]  # ✅ CORREGIDO: fecha
     
     if monto_minimo is not None:
         transacciones = [t for t in transacciones if t.monto >= monto_minimo]
@@ -68,7 +68,7 @@ def listar_todas_las_transacciones(
     if monto_maximo is not None:
         transacciones = [t for t in transacciones if t.monto <= monto_maximo]
     
-    return sorted(transacciones, key=lambda x: x.fecha_creacion, reverse=True)
+    return sorted(transacciones, key=lambda x: x.fecha, reverse=True)  # ✅ CORREGIDO: fecha
 
 @admin_transaccion_router.get("/{transaccion_id}", response_model=TransaccionRead)
 def obtener_transaccion_detallada(
@@ -143,7 +143,7 @@ def cambiar_estado_transaccion_admin(
         raise HTTPException(status_code=404, detail="Transacción no encontrada")
     
     # Validar cambio de estado
-    if transaccion.estado == EstadoPago.COMPLETADO and estado_data.estado != EstadoPago.COMPLETADO:
+    if transaccion.estado == EstadoTransaccion.COMPLETADA and estado_data.estado != EstadoTransaccion.COMPLETADA:  # ✅ CORREGIDO
         raise HTTPException(
             status_code=400, 
             detail="No se puede modificar el estado de una transacción completada"
@@ -316,13 +316,13 @@ def obtener_transacciones_cliente_completo(
     if not incluir_historicas:
         # Filtrar solo transacciones recientes (últimos 6 meses)
         seis_meses_atras = datetime.now() - timedelta(days=180)
-        transacciones = [t for t in transacciones if t.fecha_creacion >= seis_meses_atras]
+        transacciones = [t for t in transacciones if t.fecha >= seis_meses_atras]  # ✅ CORREGIDO: fecha
     
     return {
         "cliente_dni": cliente_dni,
         "nombre_cliente": cliente.nombre,
         "total_transacciones": len(transacciones),
-        "monto_total": sum(t.monto for t in transacciones if t.estado == EstadoPago.COMPLETADO),
+        "monto_total": sum(t.monto for t in transacciones if t.estado == EstadoTransaccion.COMPLETADA),  # ✅ CORREGIDO
         "transacciones": transacciones
     }
 
@@ -344,7 +344,7 @@ def obtener_alertas_transacciones_pendientes(
 def busqueda_avanzada_transacciones(
     referencia: Optional[str] = Query(None),
     cliente_dni: Optional[str] = Query(None),
-    estado: Optional[EstadoPago] = Query(None),
+    estado: Optional[EstadoTransaccion] = Query(None),  # ✅ CORREGIDO
     metodo_pago: Optional[MetodoPago] = Query(None),
     monto_minimo: Optional[float] = Query(None),
     monto_maximo: Optional[float] = Query(None),

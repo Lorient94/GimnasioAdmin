@@ -6,6 +6,7 @@ import 'package:gimnasio_app/Cubits/inscripcion_cubit.dart';
 import 'package:gimnasio_app/Cubits/mercado_pago_cubit.dart';
 import 'package:gimnasio_app/Screens/usuario_inscripciones_screen.dart';
 import 'package:gimnasio_app/Screens/usuario_pagos_screen.dart';
+import 'package:gimnasio_app/Screens/usuario_transacciones_screen.dart';
 import 'package:gimnasio_app/Widgets/crear_usuario_widget.dart';
 import 'package:gimnasio_app/utils/snackbars.dart';
 
@@ -466,11 +467,10 @@ class _UsuarioDetailScreenState extends State<UsuarioDetailScreen> {
   }
 
   void _navigateToTransacciones(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content:
-            Text('Navegando a transacciones de ${widget.usuario['nombre']}'),
-        duration: const Duration(seconds: 1),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => UsuarioTransaccionesScreen(usuario: widget.usuario),
       ),
     );
   }

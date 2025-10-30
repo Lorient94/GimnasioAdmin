@@ -1,6 +1,7 @@
+# Dominio/repositorios/repositorioTransaccion.py
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any
-from models.transaccion import Transaccion, EstadoPago, MetodoPago
+from models.transaccion import Transaccion, EstadoPago, MetodoPago  # ✅ Mantener EstadoPago aquí
 from datetime import datetime
 
 class RepositorioTransaccion(ABC):

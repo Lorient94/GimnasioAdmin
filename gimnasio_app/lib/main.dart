@@ -74,6 +74,7 @@ class MyApp extends StatelessWidget {
             create: (_) => TransaccionCubit(repository: transaccionRepository)),
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'Gimnasio ABC - Sistema de Gestión',
         theme: _buildTheme(),
         darkTheme: _buildDarkTheme(),
@@ -132,32 +133,38 @@ class HomeScreen extends StatelessWidget {
         title: const Text('Sistema de Gestión - Gimnasio ABC'),
         centerTitle: true,
         elevation: 0,
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF1A73E8).withOpacity(0.9),
+                const Color(0xFF34A853).withOpacity(0.8),
+              ],
+            ),
+          ),
+        ),
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              const Color(0xFF1A73E8).withOpacity(0.1),
-              const Color(0xFF34A853).withOpacity(0.05),
-            ],
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/fondo_gimnasio.png'),
+            fit: BoxFit.cover,
           ),
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(8.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeader(),
-                const SizedBox(height: 16),
-                _buildSectionTitle(),
-                const SizedBox(height: 12),
+                _buildCompactHeader(),
+                const SizedBox(height: 8),
                 Expanded(
-                  child: _buildOptionsGrid(context),
+                  child: _buildVeryCompactOptionsGrid(context),
                 ),
-                _buildFooter(),
+                _buildCompactFooter(),
               ],
             ),
           ),
@@ -166,33 +173,37 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildCompactHeader() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 176, 225, 244),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            spreadRadius: 2,
+            blurRadius: 4,
+            spreadRadius: 1,
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 50,
-            height: 50,
+            width: 80,
+            height: 80,
             decoration: const BoxDecoration(
-              color: Color(0xFF1A73E8),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF1A73E8), Color(0xFF34A853)],
+              ),
               shape: BoxShape.circle,
             ),
             child:
-                const Icon(Icons.fitness_center, size: 28, color: Colors.white),
+                const Icon(Icons.fitness_center, size: 50, color: Colors.white),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,15 +211,14 @@ class HomeScreen extends StatelessWidget {
                 const Text(
                   'Gimnasio ABC',
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 35,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1A73E8),
                   ),
                 ),
-                const SizedBox(height: 2),
                 Text(
-                  'Sistema Integral de Gestión',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  'Sistema de Gestión',
+                  style: TextStyle(fontSize: 20, color: Colors.grey[700]),
                 ),
               ],
             ),
@@ -218,129 +228,130 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 8.0),
-      child: Text(
-        'Módulos del Sistema',
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF1A73E8),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOptionsGrid(BuildContext context) {
+  Widget _buildVeryCompactOptionsGrid(BuildContext context) {
     final options = [
       _MenuOption(
         'Usuarios',
         Icons.people_alt,
         () => _navigateToScreen(context, const UsuariosScreen()),
-        Colors.blue,
+        const Color(0xFF3F51B5),
       ),
       _MenuOption(
         'Clases',
         Icons.fitness_center,
         () => _navigateToScreen(context, ClaseScreen()),
-        Colors.green,
+        const Color(0xFF3F51B5),
       ),
       _MenuOption(
         'Inscripciones',
         Icons.assignment,
         () => _navigateToScreen(context, InscripcionesScreen()),
-        Colors.orange,
+        const Color(0xFF3F51B5),
       ),
       _MenuOption(
         'Información',
         Icons.info,
         () => _navigateToScreen(context, InformacionScreen()),
-        Colors.purple,
+        const Color(0xFF3F51B5),
       ),
       _MenuOption(
         'Contenido',
         Icons.video_library,
         () => _navigateToScreen(context, const ContenidoScreen()),
-        Colors.red,
+        const Color(0xFF3F51B5),
       ),
       _MenuOption(
         'Pagos',
         Icons.payment,
         () => _navigateToScreen(context, const PagoScreen()),
-        Colors.teal,
+        const Color(0xFF3F51B5),
       ),
       _MenuOption(
         'Transacciones',
         Icons.receipt_long,
         () => _navigateToScreen(context, TransaccionesScreen()),
-        Colors.indigo,
+        const Color(0xFF3F51B5),
       ),
     ];
 
     return GridView.builder(
+      physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 1.0, // Más compacto
+        crossAxisCount: 3, // 3 columnas
+        crossAxisSpacing: 4,
+        mainAxisSpacing: 4,
+        childAspectRatio: 2.9, // 🔹 Más ancho y menos alto
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.all(0),
       itemCount: options.length,
       itemBuilder: (context, index) {
-        return _buildCompactButton(options[index]);
+        return _buildMinimalButton(options[index]);
       },
     );
   }
 
-  Widget _buildCompactButton(_MenuOption option) {
+  Widget _buildMinimalButton(_MenuOption option) {
     return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: option.onTap,
-        child: Container(
-          padding: const EdgeInsets.all(12), // Padding reducido
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 40, // Icono más pequeño
-                height: 40,
-                decoration: BoxDecoration(
-                  color: option.color.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(option.icon,
-                    size: 22, color: option.color), // Icono más pequeño
-              ),
-              const SizedBox(height: 8), // Espacio reducido
-              Text(
-                option.text,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 12, // Texto más pequeño
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF3F51B5), // Azul principal (predomina)
+              Color(0xFF3F51B5), // Mantiene azul en casi todo
+              Color.fromARGB(255, 38, 125, 61), // Verde leve al final
             ],
+            stops: [0.0, 0.6, 3.0], // 🔹 80% azul, 20% verde
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: option.onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(option.icon, size: 60, color: Colors.white),
+                  const SizedBox(height: 2),
+                  Text(
+                    option.text,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      height: 1.0,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildFooter() {
-    return const Padding(
-      padding: EdgeInsets.only(top: 8),
-      child: Center(
+  Widget _buildCompactFooter() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Center(
         child: Text(
           '© 2025 Gimnasio ABC',
-          style: TextStyle(fontSize: 11, color: Colors.grey),
+          style: TextStyle(fontSize: 9, color: Colors.grey),
         ),
       ),
     );

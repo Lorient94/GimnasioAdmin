@@ -114,6 +114,21 @@ class TransaccionCubit extends Cubit<TransaccionState> {
     }
   }
 
+  // ✅ CORREGIDO: Método para cargar transacciones por cliente
+  Future<void> cargarTransaccionesPorCliente(String clienteDni) async {
+    emit(TransaccionLoading());
+    try {
+      final lista = await _repository.obtenerTodasLasTransacciones(
+        clienteDni: clienteDni,
+      );
+      final transacciones = List<Map<String, dynamic>>.from(lista);
+      emit(TransaccionLoaded(
+          transacciones: transacciones, transaccionesFiltradas: transacciones));
+    } catch (e) {
+      emit(TransaccionError(message: 'Error al cargar transacciones: $e'));
+    }
+  }
+
   /// Filtra las transacciones cargadas en memoria por cliente (dni), estado o referencia.
   /// Si el query está vacío, restaura la lista completa.
   void filtrarTransacciones(String query) {
@@ -128,8 +143,9 @@ class TransaccionCubit extends Cubit<TransaccionState> {
         final cliente =
             (t['cliente_dni'] ?? t['cliente'] ?? '').toString().toLowerCase();
         final estado = (t['estado'] ?? '').toString().toLowerCase();
-        final referencia =
-            (t['referencia_pago'] ?? '').toString().toLowerCase();
+        final referencia = (t['referencia_pago'] ?? t['referencia'] ?? '')
+            .toString()
+            .toLowerCase();
         return cliente.contains(q) ||
             estado.contains(q) ||
             referencia.contains(q);

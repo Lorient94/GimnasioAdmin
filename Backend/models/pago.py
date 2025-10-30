@@ -4,17 +4,13 @@ from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel
+from .enums import EstadoPago, MetodoPago
+
 
 if TYPE_CHECKING:
     from .transaccion import Transaccion
 
-class EstadoPago(str, Enum):
-    PENDIENTE = "pendiente"
-    COMPLETADO = "completado"
-    RECHAZADO = "rechazado"
-    CANCELADO = "cancelado"
-    REEMBOLSADO = "reembolsado"
-
+# Entidad SQLModel
 class Pago(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     id_usuario: str = Field(foreign_key="cliente.dni", index=True)

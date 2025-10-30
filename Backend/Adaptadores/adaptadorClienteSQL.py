@@ -141,42 +141,42 @@ class AdaptadorClienteSQL(RepositorioCliente):
                 session.refresh(cliente)
             return cliente
     
-def eliminar_usuario_permanentemente(self, cliente_id: int) -> bool:
-    """Eliminar usuario permanentemente"""
-    with self.session as session:
-        cliente = session.get(Cliente, cliente_id)
-        if cliente:
-            # ❌ PELIGROSO: Esto causará error por restricciones de FK
-            # session.delete(cliente)
-            # session.commit()
-            
-            # ✅ CORRECCIÓN: Primero eliminar dependencias o usar cascade
-            try:
-                # Opción 1: Eliminar transacciones e inscripciones primero
-                transacciones = session.exec(select(Transaccion).where(Transaccion.cliente_dni == cliente.dni)).all()
-                for transaccion in transacciones:
-                    # Eliminar pagos de la transacción
-                    pagos = session.exec(select(Pago).where(Pago.transaccion_id == transaccion.id)).all()
-                    for pago in pagos:
-                        session.delete(pago)
-                    session.delete(transaccion)
+    def eliminar_usuario_permanentemente(self, cliente_id: int) -> bool:
+        """Eliminar usuario permanentemente"""
+        with self.session as session:
+            cliente = session.get(Cliente, cliente_id)
+            if cliente:
+                # ❌ PELIGROSO: Esto causará error por restricciones de FK
+                # session.delete(cliente)
+                # session.commit()
                 
-                # Eliminar inscripciones
-                inscripciones = session.exec(select(Inscripcion).where(Inscripcion.cliente_dni == cliente.dni)).all()
-                for inscripcion in inscripciones:
-                    session.delete(inscripcion)
-                
-                # Finalmente eliminar cliente
-                session.delete(cliente)
-                session.commit()
-                return True
-                
-            except Exception as e:
-                session.rollback()
-                print(f"Error al eliminar cliente permanentemente: {e}")
-                return False
-        return False
-    
+                # ✅ CORRECCIÓN: Primero eliminar dependencias o usar cascade
+                try:
+                    # Opción 1: Eliminar transacciones e inscripciones primero
+                    transacciones = session.exec(select(Transaccion).where(Transaccion.cliente_dni == cliente.dni)).all()
+                    for transaccion in transacciones:
+                        # Eliminar pagos de la transacción
+                        pagos = session.exec(select(Pago).where(Pago.transaccion_id == transaccion.id)).all()
+                        for pago in pagos:
+                            session.delete(pago)
+                        session.delete(transaccion)
+                    
+                    # Eliminar inscripciones
+                    inscripciones = session.exec(select(Inscripcion).where(Inscripcion.cliente_dni == cliente.dni)).all()
+                    for inscripcion in inscripciones:
+                        session.delete(inscripcion)
+                    
+                    # Finalmente eliminar cliente
+                    session.delete(cliente)
+                    session.commit()
+                    return True
+                    
+                except Exception as e:
+                    session.rollback()
+                    print(f"Error al eliminar cliente permanentemente: {e}")
+                    return False
+            return False
+        
     def obtener_estadisticas_clientes(self) -> dict:
         """Obtener estadísticas de clientes"""
         with self.session as session:
@@ -257,8 +257,3 @@ def eliminar_usuario_permanentemente(self, cliente_id: int) -> bool:
             cliente = session.exec(query).first()
             return cliente is not None
     
-    def obtener_inscripciones_activas(self, cliente_id: int) -> List:
-        """Obtener inscripciones activas de un cliente"""
-        # Esto depende de tu modelo de inscripciones
-        # Retorna una lista vacía por ahora
-        return []

@@ -1,4 +1,5 @@
 # routers/admin/mercado_pago_router.py - VERSIÓN CON MODO SIMULADO AUTOMÁTICO
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session
 from typing import Dict, Any, Optional
@@ -7,7 +8,7 @@ import uuid
 
 from database import get_session
 from models.pago import Pago, EstadoPago
-from models.transaccion import Transaccion
+from models.transaccion import EstadoTransaccion, MetodoPago, Transaccion
 # ✅ DETECCIÓN SIMPLE: Verificar si el token existe y parece válido
 def obtener_servicio_mercado_pago():
     """Obtener el servicio de Mercado Pago (real o simulado)"""

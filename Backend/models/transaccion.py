@@ -1,4 +1,4 @@
-# models/transaccion.py - VERSIÓN CORREGIDA
+# models/transaccion.py - VERSIÓN COMPLETAMENTE COMPATIBLE
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime
@@ -16,23 +16,31 @@ class MetodoPago(str, Enum):
     TARJETA_DEBITO = "tarjeta de débito"
     BILLETERA_VIRTUAL = "billetera virtual"
     EFECTIVO = "efectivo"
-    MERCADO_PAGO = "mercado_pago"  # ✅ AGREGAR ESTE
+    MERCADO_PAGO = "mercado_pago"
 
-class EstadoTransaccion(str, Enum):  # ✅ CAMBIAR DE EstadoPago a EstadoTransaccion
+class EstadoTransaccion(str, Enum):
     PENDIENTE = "pendiente"
-    COMPLETADA = "completada"  # ✅ CAMBIAR DE "completado" a "completada"
-    RECHAZADA = "rechazada"    # ✅ CAMBIAR DE "rechazado" a "rechazada"
-    CANCELADA = "cancelada"    # ✅ CAMBIAR DE "cancelado" a "cancelada"
-    REEMBOLSADA = "reembolsada" # ✅ CAMBIAR DE "reembolsado" a "reembolsada"
+    COMPLETADA = "completada"
+    RECHAZADA = "rechazada"
+    CANCELADA = "cancelada"
+    REEMBOLSADA = "reembolsada"
 
-# Entidad SQLModel
+# ✅ ENUM COMPATIBLE para el código existente
+class EstadoPago(str, Enum):
+    PENDIENTE = "pendiente"
+    COMPLETADO = "completado"  # Diferente de EstadoTransaccion.COMPLETADA
+    RECHAZADO = "rechazado"    # Diferente de EstadoTransaccion.RECHAZADA
+    CANCELADO = "cancelado"    # Diferente de EstadoTransaccion.CANCELADA
+    REEMBOLSADO = "reembolsado" # Diferente de EstadoTransaccion.REEMBOLSADA
+
+# Entidad SQLModel - usa EstadoTransaccion
 class Transaccion(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     cliente_dni: str = Field(foreign_key="cliente.dni", index=True)
     monto: float = Field(ge=0.0)
     fecha: datetime = Field(default_factory=datetime.utcnow, index=True)
     metodo_pago: MetodoPago = Field(index=True)
-    estado: EstadoTransaccion = Field(default=EstadoTransaccion.PENDIENTE, index=True)  # ✅ CAMBIAR AQUÍ
+    estado: EstadoTransaccion = Field(default=EstadoTransaccion.PENDIENTE, index=True)
     url_comprobante: Optional[str] = None
     concepto: Optional[str] = None
     descuento: Optional[float] = Field(default=0.0, ge=0.0)
@@ -45,6 +53,28 @@ class Transaccion(SQLModel, table=True):
     pagos: List["Pago"] = Relationship(back_populates="transaccion")
     inscripciones: List["Inscripcion"] = Relationship(back_populates="transaccion")
 
+# ✅ Función de conversión entre enums
+def convertir_estado_pago_a_transaccion(estado_pago: EstadoPago) -> EstadoTransaccion:
+    """Convierte EstadoPago a EstadoTransaccion"""
+    conversion_map = {
+        EstadoPago.PENDIENTE: EstadoTransaccion.PENDIENTE,
+        EstadoPago.COMPLETADO: EstadoTransaccion.COMPLETADA,
+        EstadoPago.RECHAZADO: EstadoTransaccion.RECHAZADA,
+        EstadoPago.CANCELADO: EstadoTransaccion.CANCELADA,
+        EstadoPago.REEMBOLSADO: EstadoTransaccion.REEMBOLSADA,
+    }
+    return conversion_map.get(estado_pago, EstadoTransaccion.PENDIENTE)
+
+def convertir_estado_transaccion_a_pago(estado_transaccion: EstadoTransaccion) -> EstadoPago:
+    """Convierte EstadoTransaccion a EstadoPago"""
+    conversion_map = {
+        EstadoTransaccion.PENDIENTE: EstadoPago.PENDIENTE,
+        EstadoTransaccion.COMPLETADA: EstadoPago.COMPLETADO,
+        EstadoTransaccion.RECHAZADA: EstadoPago.RECHAZADO,
+        EstadoTransaccion.CANCELADA: EstadoPago.CANCELADO,
+        EstadoTransaccion.REEMBOLSADA: EstadoPago.REEMBOLSADO,
+    }
+    return conversion_map.get(estado_transaccion, EstadoPago.PENDIENTE)
 
 # Modelos Pydantic para request/response
 class TransaccionBase(BaseModel):
@@ -62,7 +92,7 @@ class TransaccionCreate(TransaccionBase):
 class TransaccionRead(TransaccionBase):
     id: int
     fecha: datetime
-    estado: EstadoTransaccion  # ✅ CAMBIAR AQUÍ
+    estado: EstadoTransaccion
     url_comprobante: Optional[str] = None
     fecha_actualizacion: datetime
     
@@ -70,13 +100,13 @@ class TransaccionRead(TransaccionBase):
         from_attributes = True
 
 class TransaccionUpdate(BaseModel):
-    estado: Optional[EstadoTransaccion] = None  # ✅ CAMBIAR AQUÍ
+    estado: Optional[EstadoTransaccion] = None
     url_comprobante: Optional[str] = None
     observaciones: Optional[str] = None
     descuento: Optional[float] = None
 
 class TransaccionEstadoUpdate(BaseModel):
-    estado: EstadoTransaccion  # ✅ CAMBIAR AQUÍ
+    estado: EstadoTransaccion
     observaciones: Optional[str] = None
 
 class TransaccionStatsResponse(BaseModel):

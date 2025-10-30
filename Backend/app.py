@@ -95,7 +95,6 @@ try:
 except Exception as e:
     print(f"❌ Error cargando router de inscripciones: {e}")
 
-# Router de informaciones
 try:
     from routers.admin.admin_informacion_router import admin_informacion_router
     app.include_router(admin_informacion_router)
@@ -129,8 +128,14 @@ try:
     from routers.admin.admin_transaccion_router import admin_transaccion_router
     app.include_router(admin_transaccion_router)
     print("✅ Router de transacciones cargado")
+    print("📋 Rutas de transacciones registradas:")
+    for route in app.routes:
+        if hasattr(route, 'path') and 'transacciones' in str(route.path):
+            print(f"  {route.path} - {[method for method in route.methods]}")
 except Exception as e:
     print(f"❌ Error cargando router de transacciones: {e}")
+    import traceback
+    traceback.print_exc()
 
 # ✅ También agregar para servir archivos estáticos
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")    
